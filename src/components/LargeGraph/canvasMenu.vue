@@ -1,0 +1,253 @@
+<template>
+  <div>
+    <div id="canvas-menu">
+      <div class="icon-container">
+        <span
+          class="icon-span"
+          :style="{ backgroundColor: 'rgba(0, 0, 0, 0)' }"
+          @click="clickEdgeLabelController"
+          @mouseenter="
+            e => {
+              showItemTip(e, edgeLabelVisible ? '隐藏边标签' : '显示边标签')
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <i
+            class="iconfont icon-guanbibiaoqian"
+            :style="edgeLabelVisible ? iconStyle.enable : iconStyle.disable"
+          />
+        </span>
+        <span
+          class="icon-span"
+          @click="handleEnableSearch"
+          @mouseenter="
+            e => {
+              showItemTip(e, '输入 ID 搜索节点')
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <i
+            class="iconfont icon-sousuo"
+            :style="enableSearch ? iconStyle.enable : iconStyle.disable"
+          />
+        </span>
+        <span
+          v-if="enableSearch"
+          @mouseenter="
+            e => {
+              showItemTip(e, '输入需要搜索的节点 ID，并点击 检索 按钮')
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <input type="text" id="search-node-input" v-model="keyword" />
+          <button id="submit-button" @click="handleSearchNode">
+            检索
+          </button>
+        </span>
+      </div>
+    </div>
+    <div class="menu-tip" :style="{ opacity: menuTip.opacity }">
+      {{ menuTip.text }}
+    </div>
+    <div
+      id="g6-canavs-menu-item-tip"
+      :style="{ opacity: menuItemTip.opacity, ...menuItemTipStyle }"
+    >
+      {{ menuItemTip.text }}
+    </div>
+  </div>
+</template>
+
+<script>
+const iconStyle = {
+  disable: { color: 'rgba(255, 255, 255, 0.85)' },
+  enable: { color: 'rgba(82, 115, 224, 1)' }
+}
+export default {
+  props: {
+    graph: {},
+    fisheyeEnabled: {
+      type: Boolean,
+      default: true
+    },
+    lassoEnabled: {
+      type: Boolean,
+      default: true
+    },
+    //是否显示关系标签
+    edgeLabelVisible: {
+      type: Boolean,
+      default: true
+    },
+    //检索模式
+    enableSearch: {
+      type: Boolean,
+      default: true
+    }
+  },
+  data() {
+    return {
+      iconStyle,
+      menuItemTip: {
+        text: '',
+        display: 'none',
+        opacity: 0
+      },
+      menuItemTipStyle: {
+        zIndex: -100,
+        top: 0,
+        left: 0
+      },
+      menuTip: {
+        text: '',
+        display: 'none',
+        opacity: 0
+      },
+      keyword: ''
+    }
+  },
+  methods: {
+    showItemTip(e, text) {
+      const { clientX: x, clientY: y } = e
+      this.menuItemTip = {
+        text,
+        display: 'block',
+        opacity: 1
+      }
+      this.menuItemTipStyle = {
+        top: `${124}px`,
+        left: `${x - 20}px`,
+        zIndex: 100
+      }
+    },
+    hideItemTip() {
+      this.menuItemTip = {
+        text: '',
+        display: 'none',
+        opacity: 0
+      }
+      this.menuItemTipStyle.zIndex = -100
+    },
+    clickEdgeLabelController() {
+      this.$emit('update-props', 'edgeLabelVisible')
+    },
+
+    //检索模式
+    handleEnableSearch() {
+      // // 关闭 lasso 框选
+      // if (lassoEnabled) clickLassoIcon(true)
+      // // 关闭选择路径端点
+      // if (enableSelectPathEnd) setEnableSelectPathEnd(false)
+      // // 关闭搜索节点框
+      // if (enableSearch) setEnableSearch(false)
+      // // 关闭 fisheye
+      // if (fisheyeEnabled && fishEye) {
+      //   graph.removePlugin(fishEye)
+      //   clickFisheyeIcon(true)
+      // }
+      const { enableSearch } = this
+      this.menuItemTip = enableSearch
+        ? {
+            text: '',
+            display: 'none',
+            opacity: 0
+          }
+        : {
+            text: '输入需要搜索的节点 ID，并点击 Submit 按钮',
+            display: 'block',
+            opacity: 1
+          }
+      this.$emit('update-props', 'enableSearch')
+    },
+    //检索节点
+    handleSearchNode() {
+      const { keyword } = this
+      if (!keyword || !keyword.trim()) return
+      this.$emit('on-search-node', keyword)
+    }
+  }
+}
+</script>
+
+<style scoped>
+@import url('//at.alicdn.com/t/font_2973361_9y3fvpki9m5.css');
+</style>
+
+<style lang="scss" scoped>
+#canvas-menu {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  top: 20px;
+  width: fit-content;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  background-color: rgba(54, 59, 64, 0);
+  border-radius: 24px;
+  box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0);
+  font-family: PingFangSC-Semibold;
+  transition: all 0.2s linear;
+}
+#canvas-menu:hover {
+  background-color: rgba(54, 59, 64, 1);
+  box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0.6);
+}
+.icon-span {
+  padding-left: 8px;
+  padding-right: 8px;
+  cursor: pointer;
+}
+#search-node-input {
+  background-color: rgba(60, 60, 60, 0.95);
+  border-radius: 21px;
+  width: 150px;
+  border-color: rgba(80, 80, 80, 0.95);
+  border-style: solid;
+  color: rgba(255, 255, 255, 0.85);
+  margin-left: 5px;
+  padding: 0 10px;
+}
+#submit-button {
+  background-color: rgba(82, 115, 224, 0.2);
+  border-radius: 21px;
+  border-color: rgb(82, 115, 224);
+  border-style: solid;
+  color: rgba(152, 165, 254, 1);
+  margin-left: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+.menu-tip {
+  position: absolute;
+  right: calc(30% + 32px);
+  width: fit-content;
+  height: 40px;
+  line-height: 40px;
+  top: 80px;
+  padding-left: 16px;
+  padding-right: 16px;
+  background-color: rgba(54, 59, 64, 0.5);
+  color: rgba(255, 255, 255, 0.65);
+  border-radius: 8px;
+  transition: all 0.2s linear;
+  font-family: PingFangSC-Semibold;
+}
+#g6-canavs-menu-item-tip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.65);
+  padding: 10px;
+  box-shadow: rgba(0, 0, 0, 0.6) 0px 0px 10px;
+  width: fit-content;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 12px;
+  height: fit-content;
+  font-family: PingFangSC-Semibold;
+  transition: all 0.2s linear;
+}
+</style>
