@@ -7,12 +7,34 @@
       @on-search-node="handleSearchNode"
     />
     <div :id="id" />
+    <!-- test -->
+    <!-- <div
+      class="g6-component-tooltip"
+      style="position: absolute;bottom: 20px;left:20px"
+    >
+      <h4>
+        <span
+          style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:#5581D6;"
+        ></span>
+        Custom Content
+      </h4>
+      <ul>
+        <li>
+          <span>id</span>
+          <span
+            >type Custom Content Custom Content Custom Content Custom Content
+            Custom Content Custom Content Custom Content Custom Content</span
+          >
+        </li>
+        <li><span>id</span> <span>type</span></li>
+      </ul>
+    </div> -->
   </div>
 </template>
 
 <script>
 //测试数据
-// import graphData from './data.json'
+import graphData from "./data.json";
 
 //引入g6 定义节点、边
 import G6 from "./g6";
@@ -94,8 +116,6 @@ let shiftKeydown = false;
 let CANVAS_WIDTH = 800,
   CANVAS_HEIGHT = 800;
 
-const realEdgeOpacity = 0.2;
-
 const darkBackColor = "rgb(43, 47, 51)";
 const disableColor = "#777";
 const theme = "dark";
@@ -119,6 +139,89 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
   disableColor
 );
 
+//tooltip
+// cost itemType= {
+//   'aggregated-node'
+// }
+const tooltip = new G6.Tooltip({
+  offsetX: 10,
+  offsetY: 10,
+  // the types of items that allow the tooltip show up
+  // 允许出现 tooltip 的 item 类型
+  // itemTypes: ["node", "edge"],
+  // custom the tooltip's content
+  // 自定义 tooltip 内容
+  getContent: e => {
+    console.log(e.item.getModel());
+    const model = e.item.getModel();
+    const { type, label, count, colorSet, oriLabel } = e.item.getModel();
+    let itemBgColor = "",
+      itemLabel = "",
+      infoArr = [];
+    switch (type) {
+      case "aggregated-node":
+        itemBgColor = colorSet.activeStroke;
+        itemLabel = "聚合节点";
+        infoArr = [
+          {
+            key: "count",
+            value: count + " 个节点"
+          }
+        ];
+        break;
+      //TODO info
+      case "real-node":
+        itemBgColor = colorSet.activeStroke;
+        itemLabel = label;
+        break;
+      case "custom-line":
+      case "custom-quadratic":
+      case "loop":
+        itemBgColor = "#6DD400";
+        if (model.isReal) {
+          itemLabel = label || oriLabel || "";
+          const { source, target } = model;
+          infoArr = [
+            {
+              key: "source",
+              value: source
+            },
+            {
+              key: "target",
+              value: target
+            }
+          ];
+        } else {
+          itemLabel = "聚合边";
+          infoArr = [
+            {
+              key: "count",
+              value: model.count + " 条边"
+            }
+          ];
+        }
+        break;
+      default:
+        break;
+    }
+    let innerHTML = `<h4>
+      <span style="display:inline-block;margin-right:4px;border-radius:5px;width:10px;height:10px;background-color:${itemBgColor};"></span>
+      ${itemLabel}
+    </h4>`;
+    infoArr.map((item, index) => {
+      innerHTML += `
+        ${index === 0 ? "<ul>" : ""}
+          <li>
+            <span>${item.key}</span>
+            <span>${item.value}</span>
+          </li>
+        ${index === infoArr.length - 1 ? "<ul />" : ""}
+      `;
+    });
+    return innerHTML;
+  }
+});
+
 export default {
   props: {
     //数据
@@ -129,17 +232,76 @@ export default {
           nodes: [
             {
               id: "A1",
-              category: "a"
+              info: {
+                id: "xx",
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
-            { id: "A2", category: "a" },
-            { id: "A3", category: "b" },
-            { id: "B1" },
-            { id: "B2" },
-            { id: "B3" },
-            { id: "B4" },
-            { id: "B5" },
-            { id: "B6" },
-            { id: "B7" }
+            {
+              id: "A2",
+              info: {
+                id: "xx",
+                desc: "This website stores."
+              }
+            },
+            {
+              id: "A3",
+              info: {
+                id: "xx",
+                desc: "This."
+              }
+            },
+            {
+              id: "B1",
+              info: {
+                id: "xx",
+                desc: "This website stores cookies on your computer."
+              }
+            },
+            {
+              id: "B2",
+              info: {
+                id: "xx",
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              id: "B3",
+              info: {
+                id: "xx",
+                desc: "remember you."
+              }
+            },
+            {
+              id: "B4",
+              info: {
+                id: "xx",
+                desc: "stores"
+              }
+            },
+            {
+              id: "B5",
+              info: {
+                id: "xx",
+                desc: "."
+              }
+            },
+            {
+              id: "B6",
+              info: {
+                id: "xx",
+                desc: "information."
+              }
+            },
+            {
+              id: "B7",
+              info: {
+                id: "xx",
+                desc: "Policy."
+              }
+            }
           ],
           edges: [
             {
@@ -312,9 +474,7 @@ export default {
         edge.id = `edge-${uniqueId()}`;
         edge.style = { endArrow: true };
       });
-
       currentUnproccessedData = aggregatedData;
-
       const { edges: processedEdges } = processNodesEdges(
         currentUnproccessedData.nodes,
         currentUnproccessedData.edges,
@@ -322,7 +482,8 @@ export default {
         CANVAS_HEIGHT,
         largeGraphMode,
         edgeLabelVisible,
-        true
+        true,
+        cachePositions
       );
       //create graph
       this.graph = new G6.Graph({
@@ -365,8 +526,7 @@ export default {
           type: "aggregated-node",
           size: DEFAULTNODESIZE
         },
-        //context menu
-        plugins: [this.setContextMenu(clusteredData)]
+        plugins: [this.setContextMenu(clusteredData), tooltip]
       });
       this.graph.get("canvas").set("localRefresh", false);
 
@@ -385,6 +545,7 @@ export default {
       });
       layout.instance.execute();
       this.bindListener(this.graph);
+      console.log(aggregatedData.nodes);
       this.graph.data({
         nodes: aggregatedData.nodes,
         edges: processedEdges
@@ -728,7 +889,8 @@ export default {
         height,
         largeGraphMode,
         edgeLabelVisible,
-        isNewGraph
+        isNewGraph,
+        cachePositions
       );
 
       edges = processRes.edges;
@@ -760,23 +922,20 @@ export default {
         return 1;
       };
       layout.instance.execute();
-      console.log(nodes, edges);
 
       return { nodes, edges };
     },
 
     //canvas-menu func
     setCanvasMenuProps(key) {
-      console.log(this[key]);
       this[key] = !this[key];
     },
     //检索节点
-    handleSearchNode(id) {
+    handleSearchNode({ keyword: id, cb }) {
       const { graph, data, edgeLabelVisible } = this;
       if (!graph || graph.get("destroyed")) return false;
       const item = graph.findById(id);
       const originNodeData = nodeMap[id];
-      console.log(item);
       // does not exit the current mixed graph but in the origin data
       if (!item && originNodeData) {
         cachePositions = cacheNodePositions(graph.getNodes());
@@ -796,8 +955,9 @@ export default {
           edgeLabelVisible,
           false
         );
+        return cb(true);
       }
-      if (!item) return alert("无相关节点");
+      if (!item) return cb(false);
       if (item && item.getType() !== "node") return false;
       this.clearFocusItemState(graph);
       graph.focusItem(item, true);
@@ -806,10 +966,41 @@ export default {
       relatedEdges.forEach(edge => {
         graph.setItemState(edge, "focus", true);
       });
-      return true;
+      return cb(true);
     }
   }
 };
 </script>
 
-<style></style>
+<style lang="scss">
+/* tooltip wrapper */
+.g6-component-tooltip {
+  background-color: #424242;
+  padding: 5px 8px;
+  color: #e4e4e4;
+  font-size: 14px;
+  border: none;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 6px;
+  max-width: 400px;
+  width: fit-content;
+  ul {
+    padding: 0;
+    li {
+      list-style: none;
+      display: flex;
+      // justify-content: space-between;
+      // align-items: center;
+      border-bottom: 1px solid #545454;
+      padding: 5px;
+      span {
+        &:nth-child(1) {
+          width: 100px;
+          flex-shrink: 0;
+        }
+        &:nth-child(2) {
+        }
+      }
+    }
+  }
+}
+</style>

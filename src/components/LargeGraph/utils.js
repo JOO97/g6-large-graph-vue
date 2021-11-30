@@ -8,53 +8,10 @@ const DEFAULTNODESIZE = 20;
 const DEFAULTAGGREGATEDNODESIZE = 53;
 const NODE_LIMIT = 40; // TODO: find a proper number for maximum node number on the canvas
 
-let currentUnproccessedData = { nodes: [], edges: [] };
-let nodeMap = {};
-let aggregatedNodeMap = {};
-let hiddenItemIds = []; // 隐藏的元素 id 数组
-let largeGraphMode = true;
-let cachePositions = {};
 let manipulatePosition = undefined;
 let descreteNodeCenter;
-let layout = {
-  type: "",
-  instance: null,
-  destroyed: true
-};
-let expandArray = [];
-let collapseArray = [];
-let shiftKeydown = false;
-let CANVAS_WIDTH = 800,
-  CANVAS_HEIGHT = 800;
 
-const duration = 2000;
-const animateOpacity = 0.6;
-const animateBackOpacity = 0.1;
-const virtualEdgeOpacity = 0.1;
 const realEdgeOpacity = 0.2;
-
-const darkBackColor = "rgb(43, 47, 51)";
-const disableColor = "#777";
-const theme = "dark";
-const subjectColors = [
-  "#5F95FF", // blue
-  "#61DDAA",
-  "#65789B",
-  "#F6BD16",
-  "#7262FD",
-  "#78D3F8",
-  "#9661BC",
-  "#F6903D",
-  "#008685",
-  "#F08BB4"
-];
-
-const colorSets = G6.Util.getColorSetsBySubjectColors(
-  subjectColors,
-  darkBackColor,
-  theme,
-  disableColor
-);
 
 const global = {
   node: {
@@ -222,7 +179,8 @@ export const processNodesEdges = (
   height,
   largeGraphMode,
   edgeLabelVisible,
-  isNewGraph = false
+  isNewGraph = false,
+  cachePositions
 ) => {
   if (!nodes || nodes.length === 0) return {};
   const currentNodeMap = {};
@@ -394,8 +352,6 @@ export const processNodesEdges = (
     } else {
       edge.label = labelFormatter(edge.oriLabel, labelMaxLength);
     }
-    console.log(edgeLabelVisible, edge.label);
-
     // arrange the other nodes around the hub
     const sourceDis = sourceNode.size / 2 + 20;
     const targetDis = targetNode.size / 2 + 20;
@@ -566,6 +522,7 @@ export const getMixedGraph = (
       aggregatedNodeMap[cluster.id].expanded = false;
     }
   });
+  console.log("aggregatedNodeMap", aggregatedNodeMap);
   originData.edges.forEach(edge => {
     const isSourceInExpandArray = expandMap[nodeMap[edge.source].clusterId];
     const isTargetInExpandArray = expandMap[nodeMap[edge.target].clusterId];

@@ -8,7 +8,7 @@
           @click="clickEdgeLabelController"
           @mouseenter="
             e => {
-              showItemTip(e, edgeLabelVisible ? '隐藏边标签' : '显示边标签')
+              showItemTip(e, edgeLabelVisible ? '隐藏边标签' : '显示边标签');
             }
           "
           @mouseleave="hideItemTip"
@@ -23,7 +23,7 @@
           @click="handleEnableSearch"
           @mouseenter="
             e => {
-              showItemTip(e, '输入 ID 搜索节点')
+              showItemTip(e, '搜索节点');
             }
           "
           @mouseleave="hideItemTip"
@@ -37,7 +37,7 @@
           v-if="enableSearch"
           @mouseenter="
             e => {
-              showItemTip(e, '输入需要搜索的节点 ID，并点击 检索 按钮')
+              showItemTip(e, '输入需要搜索的节点 标签，并点击 检索 按钮');
             }
           "
           @mouseleave="hideItemTip"
@@ -63,9 +63,9 @@
 
 <script>
 const iconStyle = {
-  disable: { color: 'rgba(255, 255, 255, 0.85)' },
-  enable: { color: 'rgba(82, 115, 224, 1)' }
-}
+  disable: { color: "rgba(255, 255, 255, 0.85)" },
+  enable: { color: "rgba(82, 115, 224, 1)" }
+};
 export default {
   props: {
     graph: {},
@@ -92,8 +92,8 @@ export default {
     return {
       iconStyle,
       menuItemTip: {
-        text: '',
-        display: 'none',
+        text: "",
+        display: "none",
         opacity: 0
       },
       menuItemTipStyle: {
@@ -102,37 +102,37 @@ export default {
         left: 0
       },
       menuTip: {
-        text: '',
-        display: 'none',
+        text: "",
+        display: "none",
         opacity: 0
       },
-      keyword: ''
-    }
+      keyword: ""
+    };
   },
   methods: {
     showItemTip(e, text) {
-      const { clientX: x, clientY: y } = e
+      const { clientX: x, clientY: y } = e;
       this.menuItemTip = {
         text,
-        display: 'block',
+        display: "block",
         opacity: 1
-      }
+      };
       this.menuItemTipStyle = {
-        top: `${124}px`,
+        top: `${64}px`,
         left: `${x - 20}px`,
         zIndex: 100
-      }
+      };
     },
     hideItemTip() {
       this.menuItemTip = {
-        text: '',
-        display: 'none',
+        text: "",
+        display: "none",
         opacity: 0
-      }
-      this.menuItemTipStyle.zIndex = -100
+      };
+      this.menuItemTipStyle.zIndex = -100;
     },
     clickEdgeLabelController() {
-      this.$emit('update-props', 'edgeLabelVisible')
+      this.$emit("update-props", "edgeLabelVisible");
     },
 
     //检索模式
@@ -148,32 +148,55 @@ export default {
       //   graph.removePlugin(fishEye)
       //   clickFisheyeIcon(true)
       // }
-      const { enableSearch } = this
+      const { enableSearch } = this;
+      if (enableSearch) {
+        this.menuTip = {
+          text: "",
+          display: "none",
+          opacity: 0
+        };
+      }
       this.menuItemTip = enableSearch
         ? {
-            text: '',
-            display: 'none',
+            text: "",
+            display: "none",
             opacity: 0
           }
         : {
-            text: '输入需要搜索的节点 ID，并点击 Submit 按钮',
-            display: 'block',
+            text: "输入需要搜索的节点 ID，并点击 Submit 按钮",
+            display: "block",
             opacity: 1
-          }
-      this.$emit('update-props', 'enableSearch')
+          };
+      this.$emit("update-props", "enableSearch");
     },
     //检索节点
     handleSearchNode() {
-      const { keyword } = this
-      if (!keyword || !keyword.trim()) return
-      this.$emit('on-search-node', keyword)
+      const { keyword } = this;
+      if (!keyword || !keyword.trim()) return;
+      this.$emit("on-search-node", {
+        keyword,
+        cb: status => {
+          console.log(status);
+          this.menuTip = !status
+            ? {
+                text: "没有找到该节点",
+                display: "block",
+                opacity: 1
+              }
+            : {
+                text: "",
+                display: "none",
+                opacity: 0
+              };
+        }
+      });
     }
   }
-}
+};
 </script>
 
 <style scoped>
-@import url('//at.alicdn.com/t/font_2973361_9y3fvpki9m5.css');
+@import url("//at.alicdn.com/t/font_2973361_9y3fvpki9m5.css");
 </style>
 
 <style lang="scss" scoped>
@@ -224,11 +247,11 @@ export default {
 }
 .menu-tip {
   position: absolute;
-  right: calc(30% + 32px);
+  right: 20px;
   width: fit-content;
   height: 40px;
   line-height: 40px;
-  top: 80px;
+  top: 20px;
   padding-left: 16px;
   padding-right: 16px;
   background-color: rgba(54, 59, 64, 0.5);
