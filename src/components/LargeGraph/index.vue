@@ -3,8 +3,11 @@
     <CanvasMenu
       :edgeLabelVisible="edgeLabelVisible"
       :enableSearch="enableSearch"
+      :enableSelectPathEnd="enableSelectPathEnd"
       @update-props="setCanvasMenuProps"
       @on-search-node="handleSearchNode"
+      @on-fit-view="handleFitView"
+      @on-find-path="handleFindPath"
     />
     <div :id="id" />
     <!-- test -->
@@ -140,21 +143,20 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
 );
 
 //tooltip
-// cost itemType= {
-//   'aggregated-node'
-// }
 const tooltip = new G6.Tooltip({
   offsetX: 10,
   offsetY: 10,
-  // the types of items that allow the tooltip show up
-  // 允许出现 tooltip 的 item 类型
-  // itemTypes: ["node", "edge"],
-  // custom the tooltip's content
+  shouldBegin: e => {
+    const model = e.item.getModel();
+    const { type, isReal } = e.item.getModel();
+    if ((type === "custom-quadratic" || type === "custom-line") && !isReal)
+      return false;
+    return true;
+  },
   // 自定义 tooltip 内容
   getContent: e => {
-    console.log(e.item.getModel());
     const model = e.item.getModel();
-    const { type, label, count, colorSet, oriLabel } = e.item.getModel();
+    const { type, label, count, colorSet, oriLabel, id } = e.item.getModel();
     let itemBgColor = "",
       itemLabel = "",
       infoArr = [];
@@ -162,17 +164,28 @@ const tooltip = new G6.Tooltip({
       case "aggregated-node":
         itemBgColor = colorSet.activeStroke;
         itemLabel = "聚合节点";
-        infoArr = [
-          {
-            key: "count",
-            value: count + " 个节点"
-          }
-        ];
+        infoArr.push({
+          key: "count",
+          value: count + " 个节点"
+        });
         break;
-      //TODO info
       case "real-node":
         itemBgColor = colorSet.activeStroke;
         itemLabel = label;
+        if (model.customInfo) {
+          const keys = Object.keys(model.customInfo);
+          keys.map(key => {
+            infoArr.push({
+              key,
+              value: model.customInfo[key]
+            });
+          });
+        } else {
+          infoArr.push({
+            key: "id",
+            value: id
+          });
+        }
         break;
       case "custom-line":
       case "custom-quadratic":
@@ -180,8 +193,17 @@ const tooltip = new G6.Tooltip({
         itemBgColor = "#6DD400";
         if (model.isReal) {
           itemLabel = label || oriLabel || "";
-          const { source, target } = model;
-          infoArr = [
+          const { source, target, customInfo } = model;
+          if (customInfo) {
+            const keys = Object.keys(customInfo);
+            keys.map(key => {
+              infoArr.push({
+                key,
+                value: model.customInfo[key]
+              });
+            });
+          }
+          infoArr.push(
             {
               key: "source",
               value: source
@@ -190,15 +212,15 @@ const tooltip = new G6.Tooltip({
               key: "target",
               value: target
             }
-          ];
+          );
         } else {
-          itemLabel = "聚合边";
-          infoArr = [
-            {
+          if (type === "loop") {
+            itemLabel = "聚合边";
+            infoArr.push({
               key: "count",
               value: model.count + " 条边"
-            }
-          ];
+            });
+          }
         }
         break;
       default:
@@ -224,7 +246,6 @@ const tooltip = new G6.Tooltip({
 
 export default {
   props: {
-    //数据
     data: {
       type: Object,
       default: () => {
@@ -232,7 +253,7 @@ export default {
           nodes: [
             {
               id: "A1",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc:
                   "These cookies are used to collect information about how you interact with our website and allow us to remember you."
@@ -240,28 +261,28 @@ export default {
             },
             {
               id: "A2",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "This website stores."
               }
             },
             {
               id: "A3",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "This."
               }
             },
             {
               id: "B1",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "This website stores cookies on your computer."
               }
             },
             {
               id: "B2",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc:
                   "These cookies are used to collect information about how you interact with our website and allow us to remember you."
@@ -269,35 +290,35 @@ export default {
             },
             {
               id: "B3",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "remember you."
               }
             },
             {
               id: "B4",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "stores"
               }
             },
             {
               id: "B5",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "."
               }
             },
             {
               id: "B6",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "information."
               }
             },
             {
               id: "B7",
-              info: {
+              customInfo: {
                 id: "xx",
                 desc: "Policy."
               }
@@ -308,68 +329,112 @@ export default {
               source: "A2",
               target: "B7",
               value: 1,
-              type: "l1"
+              customLabel: "l1",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "A1",
               target: "A1",
               value: 1,
-              type: "l2"
+              customLabel: "l2",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
 
             {
               source: "A1",
               target: "A3",
               value: 1,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B1",
               target: "A1",
               value: 2,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "A1",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "A3",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B2",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B3",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B4",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B5",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             },
             {
               source: "B6",
               target: "B1",
               value: 20,
-              type: "l3"
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
             }
           ]
         };
@@ -396,8 +461,10 @@ export default {
   data() {
     return {
       graph: null,
+      clusteredData: "",
       edgeLabelVisible: false,
-      enableSearch: false
+      enableSearch: false,
+      enableSelectPathEnd: false
     };
   },
   watch: {
@@ -417,9 +484,6 @@ export default {
     this.init();
   },
   methods: {
-    /**
-     * init graph
-     */
     init() {
       const { id, data } = this;
       const container = document.getElementById(id);
@@ -427,9 +491,8 @@ export default {
       const wrapper = this.$refs.wrapper.getBoundingClientRect();
       CANVAS_WIDTH = wrapper.width;
       CANVAS_HEIGHT = wrapper.height;
-
       nodeMap = {};
-      const clusteredData = louvain(data, false, "weight");
+      const clusteredData = louvain(data, false);
       const aggregatedData = { nodes: [], edges: [] };
       clusteredData.clusters.forEach((cluster, i) => {
         cluster.nodes.forEach(node => {
@@ -437,6 +500,12 @@ export default {
           node.label = node.id;
           node.type = "";
           node.colorSet = colorSets[i];
+          data.nodes.map(item => {
+            const { id, customInfo } = item;
+            if (id === node.id && customInfo) {
+              node.customInfo = customInfo;
+            }
+          });
           nodeMap[node.id] = node;
         });
         const cnode = {
@@ -457,7 +526,7 @@ export default {
           ...clusterEdge,
           size: Math.log(clusterEdge.count),
           label: "",
-          id: `edge-${uniqueId()}`
+          id: `edge-${uniqueId("cedge")}`
         };
         if (cedge.source === cedge.target) {
           cedge.type = "loop";
@@ -467,14 +536,28 @@ export default {
         } else cedge.type = "line";
         aggregatedData.edges.push(cedge);
       });
+      this.clusteredData = clusteredData;
+      // console.log("clusteredData", clusteredData);
+      const { clusters } = clusteredData;
+      const cNode = [];
+      clusters.map(item => {
+        cNode.push(...item.nodes);
+      });
+      console.log("cNode", cNode);
       const { edgeLabelVisible } = this;
       data.edges.forEach(edge => {
         edge.label = "";
-        edge.oriLabel = edge.type ? edge.type : `${edge.source}-${edge.target}`;
-        edge.id = `edge-${uniqueId()}`;
+        edge.oriLabel = edge.customLabel
+          ? edge.customLabel
+          : `${edge.source}-${edge.target}`;
+        edge.id = `edge-${uniqueId("edge")}`;
         edge.style = { endArrow: true };
       });
       currentUnproccessedData = aggregatedData;
+      console.log(
+        "currentUnproccessedData.nodes",
+        currentUnproccessedData.nodes
+      );
       const { edges: processedEdges } = processNodesEdges(
         currentUnproccessedData.nodes,
         currentUnproccessedData.edges,
@@ -545,7 +628,6 @@ export default {
       });
       layout.instance.execute();
       this.bindListener(this.graph);
-      console.log(aggregatedData.nodes);
       this.graph.data({
         nodes: aggregatedData.nodes,
         edges: processedEdges
@@ -606,24 +688,30 @@ export default {
               hiddenItemIds.push(model.id);
               break;
             case "expand":
-              const newArray = manageExpandCollapseArray(
-                this.graph.getNodes().length,
+              mixedGraphData = this.getAfterExpandNodeData({
                 model,
-                collapseArray,
-                expandArray,
-                this.graph
-              );
-              expandArray = newArray.expandArray;
-              collapseArray = newArray.collapseArray;
-              mixedGraphData = getMixedGraph(
                 clusteredData,
-                data,
-                nodeMap,
-                aggregatedNodeMap,
-                expandArray,
-                collapseArray
-              );
+                data
+              });
               break;
+            //FIXME
+            // case "expandAll":
+            //   console.log(aggregatedNodeMap);
+            //   const keys = Object.keys(aggregatedNodeMap) || [];
+            //   const tempMixedGraphData = { edges: [], nodes: [] };
+            //   if (!keys.length) return;
+            //   keys.map(key => {
+            //     console.log(aggregatedNodeMap[key]);
+            //     const { edges, nodes } = this.getAfterExpandNodeData({
+            //       model: aggregatedNodeMap[key],
+            //       clusteredData,
+            //       data
+            //     });
+            //     tempMixedGraphData.edges.push(...edges);
+            //     tempMixedGraphData.nodes.push(...nodes);
+            //   });
+            //   mixedGraphData = tempMixedGraphData;
+            //   break;
             case "collapse":
               const aggregatedNode = aggregatedNodeMap[model.clusterId];
               manipulatePosition = {
@@ -700,6 +788,27 @@ export default {
         // 在哪些类型的元素上响应
         itemTypes: ["node", "edge", "canvas"]
       });
+    },
+    //展开节点后的数据
+    getAfterExpandNodeData({ model, clusteredData, data }) {
+      const newArray = manageExpandCollapseArray(
+        this.graph.getNodes().length,
+        model,
+        collapseArray,
+        expandArray,
+        this.graph
+      );
+      expandArray = newArray.expandArray;
+      collapseArray = newArray.collapseArray;
+      let mixedGraphData = getMixedGraph(
+        clusteredData,
+        data,
+        nodeMap,
+        aggregatedNodeMap,
+        expandArray,
+        collapseArray
+      );
+      return mixedGraphData;
     },
     // 事件绑定
     bindListener(graph) {
@@ -894,7 +1003,7 @@ export default {
       );
 
       edges = processRes.edges;
-
+      console.log(nodes, edges);
       graph.changeData({ nodes, edges });
 
       this.hideItems(graph);
@@ -932,20 +1041,27 @@ export default {
     },
     //检索节点
     handleSearchNode({ keyword: id, cb }) {
-      const { graph, data, edgeLabelVisible } = this;
+      const { graph, data, edgeLabelVisible, clusteredData } = this;
       if (!graph || graph.get("destroyed")) return false;
-      const item = graph.findById(id);
+      let item = graph.findById(id);
       const originNodeData = nodeMap[id];
-      // does not exit the current mixed graph but in the origin data
+      //节点存在但还未展示
       if (!item && originNodeData) {
+        const { clusterId } = originNodeData;
+        const aggregatedNode = aggregatedNodeMap[clusterId];
         cachePositions = cacheNodePositions(graph.getNodes());
-        currentUnproccessedData = getExtractNodeMixedGraph(
-          originNodeData,
-          data,
-          nodeMap,
-          aggregatedNodeMap,
-          currentUnproccessedData
-        );
+        currentUnproccessedData = this.getAfterExpandNodeData({
+          model: aggregatedNode,
+          clusteredData,
+          data
+        });
+        //  getExtractNodeMixedGraph(
+        //   originNodeData,
+        //   data,
+        //   nodeMap,
+        //   aggregatedNodeMap,
+        //   currentUnproccessedData
+        // );
         this.handleRefreshGraph(
           graph,
           currentUnproccessedData,
@@ -955,7 +1071,7 @@ export default {
           edgeLabelVisible,
           false
         );
-        return cb(true);
+        item = graph.findById(id);
       }
       if (!item) return cb(false);
       if (item && item.getType() !== "node") return false;
@@ -967,6 +1083,47 @@ export default {
         graph.setItemState(edge, "focus", true);
       });
       return cb(true);
+    },
+    //适配屏幕
+    handleFitView() {
+      const { graph } = this;
+      if (!graph || graph.destroyed) return;
+      graph.fitView(40);
+    },
+    //检索最短路径
+    handleFindPath() {
+      const { graph, data } = this;
+      if (!graph || graph.get("destroyed")) return false;
+      const selectedNodes = graph.findAllByState("node", "focus");
+      if (selectedNodes.length !== 2) {
+        alert("请选择有且两个节点！");
+        return;
+      }
+      this.clearFocusItemState(graph);
+      const { path } = findShortestPath(
+        data,
+        selectedNodes[0].getID(),
+        selectedNodes[1].getID(),
+        false, //方向性
+        false //边的权重
+      );
+      graph.getEdges().forEach(edge => {
+        const edgeModel = edge.getModel();
+        const source = edgeModel.source;
+        const target = edgeModel.target;
+        const sourceInPathIdx = path.indexOf(source);
+        const targetInPathIdx = path.indexOf(target);
+        if (sourceInPathIdx === -1 || targetInPathIdx === -1) return;
+        if (Math.abs(sourceInPathIdx - targetInPathIdx) === 1) {
+          edge.toFront();
+          graph.setItemState(edge, "focus", true);
+        }
+      });
+      path.forEach(id => {
+        const pathNode = graph.findById(id);
+        pathNode.toFront();
+        graph.setItemState(pathNode, "focus", true);
+      });
     }
   }
 };
@@ -988,8 +1145,6 @@ export default {
     li {
       list-style: none;
       display: flex;
-      // justify-content: space-between;
-      // align-items: center;
       border-bottom: 1px solid #545454;
       padding: 5px;
       span {

@@ -225,7 +225,7 @@ export const processNodesEdges = (
   // let maxCount = 0;
   edges.forEach(edge => {
     // to avoid the dulplicated id to nodes
-    if (!edge.id) edge.id = `edge-${uniqueId()}`;
+    if (!edge.id) edge.id = `edge-${uniqueId("edge")}`;
     else if (edge.id.split("-")[0] !== "edge") edge.id = `edge-${edge.id}`;
     // TODO: delete the following line after the queried data is correct
     if (!currentNodeMap[edge.source] || !currentNodeMap[edge.target]) {
@@ -303,13 +303,16 @@ export const processNodesEdges = (
       arrowLength},-${arrowWidth} L ${arrowBeging +
       arrowLength},${arrowWidth} Z`;
     let d = targetNode.size / 2 + arrowLength;
-    if (edge.source === edge.target) {
-      edge.type = "loop";
-      arrowPath = undefined;
-    }
     const sourceNode = currentNodeMap[edge.source];
     const isRealEdge = targetNode.isReal && sourceNode.isReal;
     edge.isReal = isRealEdge;
+
+    if (edge.source === edge.target) {
+      edge.type = "loop";
+      if (!edge.isReal) {
+        arrowPath = undefined;
+      }
+    }
     const stroke = isRealEdge
       ? global.edge.style.realEdgeStroke
       : global.edge.style.stroke;
@@ -522,7 +525,6 @@ export const getMixedGraph = (
       aggregatedNodeMap[cluster.id].expanded = false;
     }
   });
-  console.log("aggregatedNodeMap", aggregatedNodeMap);
   originData.edges.forEach(edge => {
     const isSourceInExpandArray = expandMap[nodeMap[edge.source].clusterId];
     const isTargetInExpandArray = expandMap[nodeMap[edge.target].clusterId];
@@ -533,7 +535,7 @@ export const getMixedGraph = (
       const vedge = {
         source: edge.source,
         target: targetClusterId,
-        id: `edge-${uniqueId()}`,
+        id: `edge-${uniqueId("vedge")}`,
         label: ""
       };
       edges.push(vedge);
@@ -542,7 +544,7 @@ export const getMixedGraph = (
       const vedge = {
         target: edge.target,
         source: sourceClusterId,
-        id: `edge-${uniqueId()}`,
+        id: `edge-${uniqueId("vedge")}`,
         label: ""
       };
       edges.push(vedge);
@@ -582,7 +584,7 @@ const generateNeighbors = (
   const neighborNum = Math.ceil(Math.random() * maxNeighborNumPerNode);
   for (let i = 0; i < neighborNum; i++) {
     const neighborNode = {
-      id: uniqueId(),
+      id: uniqueId("node"),
       clusterId,
       level: 0,
       colorSet: centerNodeModel.colorSet
@@ -592,7 +594,7 @@ const generateNeighbors = (
     const source = dire ? centerId : neighborNode.id;
     const target = dire ? neighborNode.id : centerId;
     const neighborEdge = {
-      id: uniqueId(),
+      id: uniqueId("node"),
       source,
       target,
       label: `${source}-${target}`
@@ -673,7 +675,7 @@ export const getExtractNodeMixedGraph = (
       if (!aggregatedNodeMap[targetClusterId].expanded) {
         // did not expand, create an virtual edge fromt he extract node to the cluster
         currentUnproccessedData.edges.push({
-          id: uniqueId(),
+          id: uniqueId("edges"),
           source: extractNodeId,
           target: targetClusterId
         });
@@ -686,7 +688,7 @@ export const getExtractNodeMixedGraph = (
       if (!aggregatedNodeMap[sourceClusterId].expanded) {
         // did not expand, create an virtual edge fromt he extract node to the cluster
         currentUnproccessedData.edges.push({
-          id: uniqueId(),
+          id: uniqueId("edges"),
           target: extractNodeId,
           source: sourceClusterId
         });

@@ -20,6 +20,33 @@
         </span>
         <span
           class="icon-span"
+          @click="handleFitView"
+          @mouseenter="
+            e => {
+              showItemTip(e, '图内容适配容器');
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <i class="iconfont icon-zishiying" :style="iconStyle.disable" />
+        </span>
+        <span
+          class="icon-span"
+          @click="handleEnableSelectPathEnd"
+          @mouseenter="
+            e => {
+              showItemTip(e, '搜索最短路径');
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <i
+            class="iconfont icon-suoyin"
+            :style="enableSelectPathEnd ? iconStyle.enable : iconStyle.disable"
+          />
+        </span>
+        <span
+          class="icon-span"
           @click="handleEnableSearch"
           @mouseenter="
             e => {
@@ -47,6 +74,22 @@
             检索
           </button>
         </span>
+        <span
+          v-if="enableSelectPathEnd"
+          @mouseenter="
+            e => {
+              showItemTip(
+                e,
+                '选择有且仅有两个节点作为端点，并点击 查找路径 按钮'
+              );
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <button id="submit-button" @click="handleFindPath">
+            查找路径
+          </button>
+        </span>
       </div>
     </div>
     <div class="menu-tip" :style="{ opacity: menuTip.opacity }">
@@ -68,24 +111,28 @@ const iconStyle = {
 };
 export default {
   props: {
-    graph: {},
     fisheyeEnabled: {
       type: Boolean,
-      default: true
+      default: false
     },
     lassoEnabled: {
       type: Boolean,
-      default: true
+      default: false
     },
     //是否显示关系标签
     edgeLabelVisible: {
       type: Boolean,
-      default: true
+      default: false
     },
-    //检索模式
+    //检索节点模式
     enableSearch: {
       type: Boolean,
-      default: true
+      default: false
+    },
+    //检索最短路径模式
+    enableSelectPathEnd: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -148,28 +195,32 @@ export default {
       //   graph.removePlugin(fishEye)
       //   clickFisheyeIcon(true)
       // }
-      const { enableSearch } = this;
+      const { enableSearch, enableSelectPathEnd } = this;
       if (enableSearch) {
         this.menuTip = {
           text: "",
           display: "none",
           opacity: 0
         };
+        this.menuItemTip = {
+          text: "",
+          display: "none",
+          opacity: 0
+        };
+      } else {
+        // 关闭搜索路径模式
+        if (enableSelectPathEnd) {
+          this.$emit("update-props", "enableSelectPathEnd");
+        }
+        this.menuItemTip = {
+          text: "输入需要搜索的节点 ID，并点击 Submit 按钮",
+          display: "block",
+          opacity: 1
+        };
       }
-      this.menuItemTip = enableSearch
-        ? {
-            text: "",
-            display: "none",
-            opacity: 0
-          }
-        : {
-            text: "输入需要搜索的节点 ID，并点击 Submit 按钮",
-            display: "block",
-            opacity: 1
-          };
       this.$emit("update-props", "enableSearch");
     },
-    //检索节点
+    //检索
     handleSearchNode() {
       const { keyword } = this;
       if (!keyword || !keyword.trim()) return;
@@ -190,6 +241,30 @@ export default {
               };
         }
       });
+    },
+    //适配
+    handleFitView() {
+      this.$emit("on-fit-view");
+    },
+    //检索最短路径模式
+    handleEnableSelectPathEnd() {
+      const { enableSearch, enableSelectPathEnd } = this;
+      if (enableSelectPathEnd) {
+        this.menuTip = { text: "", display: "none", opacity: 0 };
+      } else {
+        // 关闭搜索节点模式
+        if (enableSearch) this.$emit("update-props", "enableSearch");
+        this.menuTip = {
+          text: "按住 SHIFT 键并点选两个节点作为路径起终点",
+          display: "block",
+          opacity: 1
+        };
+      }
+      this.$emit("update-props", "enableSelectPathEnd");
+    },
+    //查找路径
+    handleFindPath() {
+      this.$emit("on-find-path");
     }
   }
 };
@@ -221,8 +296,8 @@ export default {
   box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0.6);
 }
 .icon-span {
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
   cursor: pointer;
 }
 #search-node-input {

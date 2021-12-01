@@ -322,7 +322,6 @@ G6.registerNode(
       return keyShape;
     },
     setState: (name, value, item) => {
-      console.log("i", item);
       const group = item.get("group");
       if (name === "layoutEnd" && value) {
         const labelShape = group.find(e => e.get("name") === "text-shape");
