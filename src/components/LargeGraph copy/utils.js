@@ -2,13 +2,10 @@ import G6 from "./g6";
 const { uniqueId } = G6.Util;
 
 const NODESIZEMAPPING = "degree";
-const SMALLGRAPHLABELMAXLENGTH = 15;
+const SMALLGRAPHLABELMAXLENGTH = 5;
 export let labelMaxLength = SMALLGRAPHLABELMAXLENGTH;
-//默认节点大小
-const DEFAULTNODESIZE = 35;
-//默认子节点大小
-const CHILDNODESIZE = 20;
-
+const DEFAULTNODESIZE = 20;
+const DEFAULTAGGREGATEDNODESIZE = 53;
 const NODE_LIMIT = 40; // TODO: find a proper number for maximum node number on the canvas
 
 let manipulatePosition = undefined;
@@ -57,7 +54,7 @@ const global = {
 };
 
 // 截断长文本。length 为文本截断后长度，elipsis 是后缀
-const formatText = (text, length = labelMaxLength, elipsis = "...") => {
+const formatText = (text, length = 5, elipsis = "...") => {
   if (!text) return "";
   if (text.length > length) {
     return `${text.substr(0, length)}${elipsis}`;
@@ -173,7 +170,7 @@ export const getForceLayoutConfig = (
 };
 
 /**
- * 处理节点、边数据
+ *
  */
 export const processNodesEdges = (
   nodes,
@@ -192,10 +189,9 @@ export const processNodesEdges = (
   const paddingLeft = paddingRatio * width;
   const paddingTop = paddingRatio * height;
   nodes.forEach(node => {
-    console.log("node", node);
-    node.type = node.level === -1 ? "model-node" : "real-node";
-    node.isReal = true;
-    node.label = node.label ? node.label : node.id;
+    node.type = node.level === 0 ? "real-node" : "aggregated-node";
+    node.isReal = node.level === 0 ? true : false;
+    node.label = `${node.id}`;
     node.labelLineNum = undefined;
     node.oriLabel = node.label;
     node.label = formatText(node.label, labelMaxLength, "...");
@@ -228,8 +224,10 @@ export const processNodesEdges = (
   let minCount = Infinity;
   // let maxCount = 0;
   edges.forEach(edge => {
+    // to avoid the dulplicated id to nodes
     if (!edge.id) edge.id = `edge-${uniqueId("edge")}`;
     else if (edge.id.split("-")[0] !== "edge") edge.id = `edge-${edge.id}`;
+    // TODO: delete the following line after the queried data is correct
     if (!currentNodeMap[edge.source] || !currentNodeMap[edge.target]) {
       console.warn(
         "edge source target does not exist",
@@ -267,9 +265,8 @@ export const processNodesEdges = (
   nodes.forEach((node, i) => {
     // assign the size mapping to the outDegree
     const countRatio = node.count / maxNodeCount;
-    // const isRealNode = node.level === 0;
-    const isRealNode = true;
-    node.size = node.level === -1 ? DEFAULTNODESIZE : CHILDNODESIZE;
+    const isRealNode = node.level === 0;
+    node.size = isRealNode ? DEFAULTNODESIZE : DEFAULTAGGREGATEDNODESIZE;
     node.isReal = isRealNode;
     node.labelCfg = {
       position: "bottom",
@@ -307,9 +304,9 @@ export const processNodesEdges = (
       arrowLength},${arrowWidth} Z`;
     let d = targetNode.size / 2 + arrowLength;
     const sourceNode = currentNodeMap[edge.source];
-    const isRealEdge =
-      edge.level === -1 && targetNode.isReal && sourceNode.isReal;
+    const isRealEdge = targetNode.isReal && sourceNode.isReal;
     edge.isReal = isRealEdge;
+
     if (edge.source === edge.target) {
       edge.type = "loop";
       if (!edge.isReal) {

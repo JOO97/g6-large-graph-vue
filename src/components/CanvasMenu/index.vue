@@ -4,6 +4,17 @@
       <div class="icon-container">
         <span
           class="icon-span"
+          @mouseenter="
+            e => {
+              showItemTip(e, '创建模型');
+            }
+          "
+          @mouseleave="hideItemTip"
+        >
+          <i class="iconfont icon-chuangjian" :style="iconStyle.disable" />
+        </span>
+        <span
+          class="icon-span"
           :style="{ backgroundColor: 'rgba(0, 0, 0, 0)' }"
           @click="clickEdgeLabelController"
           @mouseenter="
@@ -271,7 +282,7 @@ export default {
 </script>
 
 <style scoped>
-@import url("//at.alicdn.com/t/font_2973361_9y3fvpki9m5.css");
+@import url("//at.alicdn.com/t/font_2973361_nc62eumlsui.css");
 </style>
 
 <style lang="scss" scoped>
@@ -287,12 +298,13 @@ export default {
   height: 40px;
   background-color: rgba(54, 59, 64, 0);
   border-radius: 24px;
-  box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0);
   font-family: PingFangSC-Semibold;
   transition: all 0.2s linear;
+  background-color: rgba(54, 59, 64, 1);
+  box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0.2);
 }
 #canvas-menu:hover {
-  background-color: rgba(54, 59, 64, 1);
+  // background-color: rgba(54, 59, 64, 1);
   box-shadow: 0 5px 18px 0 rgba(0, 0, 0, 0.6);
 }
 .icon-span {

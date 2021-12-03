@@ -98,12 +98,11 @@ insertCss(`
 	}
 `);
 
-const DEFAULTNODESIZE = 100;
+const DEFAULTNODESIZE = 20;
 
 let currentUnproccessedData = { nodes: [], edges: [] };
 let nodeMap = {};
 let aggregatedNodeMap = {};
-let modelNodeMap = {};
 let hiddenItemIds = []; // 隐藏的元素 id 数组
 let largeGraphMode = true;
 let cachePositions = {};
@@ -157,28 +156,18 @@ const tooltip = new G6.Tooltip({
   // 自定义 tooltip 内容
   getContent: e => {
     const model = e.item.getModel();
-    const { type, label, count, colorSet, oriLabel, id } = model;
+    const { type, label, count, colorSet, oriLabel, id } = e.item.getModel();
     let itemBgColor = "",
       itemLabel = "",
       infoArr = [];
     switch (type) {
-      case "model-node":
+      case "aggregated-node":
         itemBgColor = colorSet.activeStroke;
-        itemLabel = "模型：" + label;
-        if (model.customInfo) {
-          const keys = Object.keys(model.customInfo);
-          keys.map(key => {
-            infoArr.push({
-              key,
-              value: model.customInfo[key]
-            });
-          });
-        } else {
-          infoArr.push({
-            key: "id",
-            value: id
-          });
-        }
+        itemLabel = "聚合节点";
+        infoArr.push({
+          key: "count",
+          value: count + " 个节点"
+        });
         break;
       case "real-node":
         itemBgColor = colorSet.activeStroke;
@@ -255,7 +244,6 @@ const tooltip = new G6.Tooltip({
   }
 });
 
-//nodeType: 1-一级节点(模型) 2-二级节点(属性)
 export default {
   props: {
     data: {
@@ -264,42 +252,79 @@ export default {
         return {
           nodes: [
             {
-              id: "12345646",
-              name: "模型A1",
+              id: "模型A1",
               customInfo: {
                 id: "xx",
                 desc:
                   "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-              },
-              nodeType: 1
+              }
             },
             {
-              id: "1234564623213",
-              name: "模型A2",
+              id: "模型A2",
               customInfo: {
                 id: "xx",
                 desc: "This website stores."
-              },
-              nodeType: 1
+              }
             },
             {
-              id: "1234564634324",
-              name: "属性A1",
+              id: "模型A3",
               customInfo: {
                 id: "xx",
                 desc: "This."
-              },
-              nodeType: 2,
-              pId: "12345646"
+              }
             }
+            // {
+            //   id: "模型B1",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "This website stores cookies on your computer."
+            //   }
+            // },
+            // {
+            //   id: "模型B2",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc:
+            //       "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+            //   }
+            // },
+            // {
+            //   id: "模型B3",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "remember you."
+            //   }
+            // },
+            // {
+            //   id: "模型B4",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "stores"
+            //   }
+            // },
+            // {
+            //   id: "模型B5",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "."
+            //   }
+            // },
+            // {
+            //   id: "模型B6",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "information."
+            //   }
+            // },
+            // {
+            //   id: "模型B7",
+            //   customInfo: {
+            //     id: "xx",
+            //     desc: "Policy."
+            //   }
+            // }
           ],
-          edges: [
-            {
-              source: "12345646",
-              target: "1234564623213",
-              customLabel: "hasNarrow"
-            }
-          ]
+          edges: []
           // [
           //   {
           //     source: "模型A2",
@@ -438,7 +463,7 @@ export default {
     return {
       graph: null,
       clusteredData: "",
-      edgeLabelVisible: true,
+      edgeLabelVisible: false,
       enableSearch: false,
       enableSelectPathEnd: false
     };
@@ -469,48 +494,6 @@ export default {
       CANVAS_HEIGHT = wrapper.height;
       nodeMap = {};
       const clusteredData = louvain(data, false);
-      const mNodes = data.nodes
-        .filter(item => item.nodeType === 1)
-        .map((item, i) => {
-          const children = data.nodes
-            .filter(cNode => cNode.nodeType === 2 && cNode.pId === item.id)
-            .map((cNode, i2) => {
-              const cNodeObj = {
-                ...cNode,
-                level: 0,
-                label: item.name,
-                colorSet: colorSets[i],
-                idx: i2,
-                type: "real-node"
-              };
-              nodeMap[cNode.id] = cNodeObj;
-              return cNodeObj;
-            });
-          const node = {
-            ...item,
-            level: -1,
-            label: item.name,
-            colorSet: colorSets[i],
-            idx: i,
-            type: "model-node",
-            showCNodes: false, //是否展示子节点
-            children
-          };
-          modelNodeMap[item.id] = node;
-          return node;
-        });
-      const mEdges = data.edges.map(edge => {
-        return {
-          ...edge,
-          label: "",
-          oriLabel: edge.customLabel
-            ? edge.customLabel
-            : `${edge.source}-${edge.target}`,
-          id: `edge-${uniqueId("edge")}`,
-          style: { endArrow: true },
-          level: -1
-        };
-      });
       const aggregatedData = { nodes: [], edges: [] };
       clusteredData.clusters.forEach((cluster, i) => {
         cluster.nodes.forEach(node => {
@@ -519,11 +502,10 @@ export default {
           node.type = "";
           node.colorSet = colorSets[i];
           data.nodes.map(item => {
-            const { id, customInfo, nodeType } = item;
+            const { id, customInfo } = item;
             if (id === node.id && customInfo) {
               node.customInfo = customInfo;
             }
-            node.nodeType = nodeType;
           });
           nodeMap[node.id] = node;
         });
@@ -556,9 +538,11 @@ export default {
         aggregatedData.edges.push(cedge);
       });
       this.clusteredData = clusteredData;
+      // console.log("clusteredData", clusteredData);
       const { clusters } = clusteredData;
       const cNode = [];
       clusters.map(item => cNode.push(...item.nodes));
+      console.log("cNode", cNode);
       const { edgeLabelVisible } = this;
       data.edges.forEach(edge => {
         edge.label = "";
@@ -569,9 +553,13 @@ export default {
         edge.style = { endArrow: true };
       });
       currentUnproccessedData = aggregatedData;
+      console.log(
+        "currentUnproccessedData.nodes",
+        currentUnproccessedData.nodes
+      );
       const { edges: processedEdges } = processNodesEdges(
-        mNodes,
-        mEdges,
+        currentUnproccessedData.nodes,
+        currentUnproccessedData.edges,
         CANVAS_WIDTH,
         CANVAS_HEIGHT,
         largeGraphMode,
@@ -617,7 +605,7 @@ export default {
           fisheyeMode: []
         },
         defaultNode: {
-          type: "model-node",
+          type: "aggregated-node",
           size: DEFAULTNODESIZE
         },
         plugins: [this.setContextMenu(clusteredData), tooltip]
@@ -629,18 +617,18 @@ export default {
         largeGraphMode,
         null,
         nodeMap,
-        modelNodeMap
+        aggregatedNodeMap
       );
       layoutConfig.center = [CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2];
       layout.instance = new G6.Layout["gForce"](layoutConfig);
       layout.instance.init({
-        nodes: mNodes,
+        nodes: currentUnproccessedData.nodes,
         edges: processedEdges
       });
       layout.instance.execute();
       this.bindListener(this.graph);
       this.graph.data({
-        nodes: mNodes,
+        nodes: aggregatedData.nodes,
         edges: processedEdges
       });
       this.graph.render();
@@ -659,37 +647,34 @@ export default {
           const { item } = evt;
           if (evt.target && evt.target.isCanvas && evt.target.isCanvas()) {
             return `<ul>
-          <li id='collapseAll'>隐藏所有属性节点</li>
           <li id='show'>显示所有隐藏元素</li>
+          <li id='collapseAll'>聚合所有聚类</li>
         </ul>`;
           } else if (!item) return;
           const itemType = item.getType();
           const model = item.getModel();
           if (itemType && model) {
             if (itemType === "node") {
-              if (model.level === -1) {
+              if (model.level !== 0) {
                 return `<ul>
-              <li id='createCNode'>添加属性</li>
-              <li id='createEdge'>添加关系</li>
-
-              <li id='editMNode'>编辑模型</li>
-              <li id='delMNode'>删除模型</li>
-               ${
-                 model.showCNodes
-                   ? '<li id="hideCNode">隐藏属性节点</li>'
-                   : '<li id="showCNode">显示属性节点</li>'
-               }
+              <li id='expand'>展开该聚合点</li>
+              <li id='hide'>隐藏该节点</li>
             </ul>`;
-              } else if (model.level === 0) {
+              } else {
                 return `<ul>
-              <li id='editCNode'>编辑属性</li>
-              <li id='delCNode'>删除属性</li>
+            <li id='neighbor-1'>新建属性</li>
+            <li id='neighbor-1'>新建关系</li>
+            <li id='neighbor-1'>编辑模型</li>
+             <!-- <li id='collapse'>聚合所属聚类</li>
+            <li id='neighbor-1'>扩展一度关系</li>
+              <li id='neighbor-2'>扩展二度关系</li>
+              <li id='neighbor-3'>扩展三度关系</li>
+              <li id='hide'>隐藏该节点</li>-->
             </ul>`;
               }
-            } else if (itemType === "edge") {
+            } else {
               return `<ul>
-            <li id='editEdge'>编辑关系</li>
-            <li id='delEdge'>删除关系</li>
+            <li id='hide'>隐藏该边</li>
           </ul>`;
             }
           }
@@ -699,9 +684,6 @@ export default {
           const liIdStrs = target.id.split("-");
           let mixedGraphData;
           switch (liIdStrs[0]) {
-            case "showCNode":
-              console.log(model);
-              break;
             case "hide":
               this.graph.hideItem(item);
               hiddenItemIds.push(model.id);
@@ -713,6 +695,24 @@ export default {
                 data
               });
               break;
+            //FIXME
+            // case "expandAll":
+            //   console.log(aggregatedNodeMap);
+            //   const keys = Object.keys(aggregatedNodeMap) || [];
+            //   const tempMixedGraphData = { edges: [], nodes: [] };
+            //   if (!keys.length) return;
+            //   keys.map(key => {
+            //     console.log(aggregatedNodeMap[key]);
+            //     const { edges, nodes } = this.getAfterExpandNodeData({
+            //       model: aggregatedNodeMap[key],
+            //       clusteredData,
+            //       data
+            //     });
+            //     tempMixedGraphData.edges.push(...edges);
+            //     tempMixedGraphData.nodes.push(...nodes);
+            //   });
+            //   mixedGraphData = tempMixedGraphData;
+            //   break;
             case "collapse":
               const aggregatedNode = aggregatedNodeMap[model.clusterId];
               manipulatePosition = {
@@ -910,11 +910,11 @@ export default {
       // click canvas to cancel all the focus state
       graph.on("canvas:click", evt => {
         this.clearFocusItemState(graph);
-        // console.log(
-        //   graph.getGroup(),
-        //   graph.getGroup().getBBox(),
-        //   graph.getGroup().getCanvasBBox()
-        // );
+        console.log(
+          graph.getGroup(),
+          graph.getGroup().getBBox(),
+          graph.getGroup().getCanvasBBox()
+        );
       });
       //创建边
       // graph.on('aftercreateedge', e => {
@@ -1004,6 +1004,7 @@ export default {
       );
 
       edges = processRes.edges;
+      console.log(nodes, edges);
       graph.changeData({ nodes, edges });
 
       this.hideItems(graph);

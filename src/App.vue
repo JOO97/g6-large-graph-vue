@@ -6,10 +6,11 @@
 
 <script>
 import LargeGraph from "./components/LargeGraph/index.vue";
+import CanvasMenu from "./components/CanvasMenu/index.vue";
 
 export default {
   name: "app",
-  components: { LargeGraph },
+  components: { LargeGraph, CanvasMenu },
   data() {
     return {};
   }
