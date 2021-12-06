@@ -192,7 +192,6 @@ export const processNodesEdges = (
   const paddingLeft = paddingRatio * width;
   const paddingTop = paddingRatio * height;
   nodes.forEach(node => {
-    console.log("node", node);
     node.type = node.level === -1 ? "model-node" : "real-node";
     node.isReal = true;
     node.label = node.label ? node.label : node.id;
@@ -307,8 +306,7 @@ export const processNodesEdges = (
       arrowLength},${arrowWidth} Z`;
     let d = targetNode.size / 2 + arrowLength;
     const sourceNode = currentNodeMap[edge.source];
-    const isRealEdge =
-      edge.level === -1 && targetNode.isReal && sourceNode.isReal;
+    const isRealEdge = edge.level === -1 ? true : false;
     edge.isReal = isRealEdge;
     if (edge.source === edge.target) {
       edge.type = "loop";
@@ -331,22 +329,23 @@ export const processNodesEdges = (
       lineAppendWidth: Math.max(edge.size || 5, 5),
       fillOpacity: 1,
       lineDash,
-      endArrow: arrowPath
-        ? {
-            path: arrowPath,
-            d,
-            fill: stroke,
-            strokeOpacity: 0
-          }
-        : false
+      endArrow:
+        isRealEdge && arrowPath
+          ? {
+              path: arrowPath,
+              d,
+              fill: stroke,
+              strokeOpacity: 1
+            }
+          : undefined
     };
     edge.labelCfg = {
       autoRotate: true,
       style: {
         stroke: global.edge.labelCfg.style.stroke,
         fill: global.edge.labelCfg.style.fill,
-        lineWidth: 4,
-        fontSize: 12,
+        lineWidth: 5,
+        fontSize: 14,
         lineAppendWidth: 10,
         opacity: 1
       }
@@ -519,7 +518,7 @@ export const getMixedGraph = (
     collapseMap[collapseModel.id] = true;
   });
 
-  aggregatedData.clusters.forEach((cluster, i) => {
+  aggregatedData.nodes.forEach((cluster, i) => {
     if (expandMap[cluster.id]) {
       nodes = nodes.concat(cluster.nodes);
       aggregatedNodeMap[cluster.id].expanded = true;
@@ -553,7 +552,7 @@ export const getMixedGraph = (
       edges.push(vedge);
     }
   });
-  aggregatedData.clusterEdges.forEach(edge => {
+  aggregatedData.edges.forEach(edge => {
     if (expandMap[edge.source] || expandMap[edge.target]) return;
     else edges.push(edge);
   });

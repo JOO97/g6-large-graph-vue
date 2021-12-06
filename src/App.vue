@@ -1,18 +1,34 @@
 <template>
   <div id="app">
-    <LargeGraph />
+    <button @click="showOriginal = !showOriginal">切换</button>
+    <LargeGraph v-if="!showOriginal" @on-click-menu="handleGraphMenuClick" />
+    <LargeGraphOriginal v-else />
   </div>
 </template>
 
 <script>
 import LargeGraph from "./components/LargeGraph/index.vue";
+import LargeGraphOriginal from "./components/LargeGraphCopy/index.vue";
 import CanvasMenu from "./components/CanvasMenu/index.vue";
 
 export default {
   name: "app",
-  components: { LargeGraph, CanvasMenu },
+  components: { LargeGraph, CanvasMenu, LargeGraphOriginal },
   data() {
-    return {};
+    return {
+      showOriginal: false
+    };
+  },
+  methods: {
+    handleGraphMenuClick({ type }) {
+      switch (type) {
+        case "createModel":
+          console.log("createModel");
+          break;
+        default:
+          break;
+      }
+    }
   }
 };
 </script>

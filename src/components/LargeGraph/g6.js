@@ -8,7 +8,7 @@ const duration = 2000;
 const animateOpacity = 0.6;
 const animateBackOpacity = 0.1;
 const virtualEdgeOpacity = 0.1;
-const realEdgeOpacity = 0.2;
+const realEdgeOpacity = 0.5;
 
 const darkBackColor = "rgb(43, 47, 51)";
 const disableColor = "#777";
@@ -634,12 +634,12 @@ G6.registerEdge(
           keyShape.attr({
             strokeOpacity: animateOpacity,
             opacity: animateOpacity,
-            stroke: "#fff",
-            endArrow: {
-              ...arrow,
-              stroke: "#fff",
-              fill: "#fff"
-            }
+            stroke: "#fff"
+            // endArrow: {
+            //   ...arrow,
+            //   stroke: "#fff",
+            //   fill: "#fff"
+            // }
           });
           if (model.isReal) {
             const { path, stroke, lineWidth } = keyShape.attr();
@@ -699,12 +699,12 @@ G6.registerEdge(
           keyShape.attr({
             stroke,
             strokeOpacity: opacity,
-            opacity: opacity,
-            endArrow: {
-              ...arrow,
-              stroke,
-              fill: stroke
-            }
+            opacity: opacity
+            // endArrow: {
+            //   ...arrow,
+            //   stroke,
+            //   fill: stroke
+            // }
           });
         }
       }

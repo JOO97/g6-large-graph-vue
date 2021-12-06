@@ -272,172 +272,171 @@ export default {
                 id: "xx",
                 desc: "This."
               }
+            },
+            {
+              id: "模型B1",
+              customInfo: {
+                id: "xx",
+                desc: "This website stores cookies on your computer."
+              }
+            },
+            {
+              id: "模型B2",
+              customInfo: {
+                id: "xx",
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              id: "模型B3",
+              customInfo: {
+                id: "xx",
+                desc: "remember you."
+              }
+            },
+            {
+              id: "模型B4",
+              customInfo: {
+                id: "xx",
+                desc: "stores"
+              }
+            },
+            {
+              id: "模型B5",
+              customInfo: {
+                id: "xx",
+                desc: "."
+              }
+            },
+            {
+              id: "模型B6",
+              customInfo: {
+                id: "xx",
+                desc: "information."
+              }
+            },
+            {
+              id: "模型B7",
+              customInfo: {
+                id: "xx",
+                desc: "Policy."
+              }
             }
-            // {
-            //   id: "模型B1",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "This website stores cookies on your computer."
-            //   }
-            // },
-            // {
-            //   id: "模型B2",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc:
-            //       "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-            //   }
-            // },
-            // {
-            //   id: "模型B3",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "remember you."
-            //   }
-            // },
-            // {
-            //   id: "模型B4",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "stores"
-            //   }
-            // },
-            // {
-            //   id: "模型B5",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "."
-            //   }
-            // },
-            // {
-            //   id: "模型B6",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "information."
-            //   }
-            // },
-            // {
-            //   id: "模型B7",
-            //   customInfo: {
-            //     id: "xx",
-            //     desc: "Policy."
-            //   }
-            // }
           ],
-          edges: []
-          // [
-          //   {
-          //     source: "模型A2",
-          //     target: "模型B7",
-          //     value: 1,
-          //     customLabel: "l1",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型A1",
-          //     target: "模型A1",
-          //     value: 1,
-          //     customLabel: "l2",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
+          edges: [
+            {
+              source: "模型A2",
+              target: "模型B7",
+              value: 1,
+              customLabel: "l1",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型A1",
+              target: "模型A1",
+              value: 1,
+              customLabel: "l2",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
 
-          //   {
-          //     source: "模型A1",
-          //     target: "模型A3",
-          //     value: 1,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B1",
-          //     target: "模型A1",
-          //     value: 2,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型A1",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型A3",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B2",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B3",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B4",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B5",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   },
-          //   {
-          //     source: "模型B6",
-          //     target: "模型B1",
-          //     value: 20,
-          //     customLabel: "l3",
-          //     customInfo: {
-          //       desc:
-          //         "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-          //     }
-          //   }
-          // ]
+            {
+              source: "模型A1",
+              target: "模型A3",
+              value: 1,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B1",
+              target: "模型A1",
+              value: 2,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型A1",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型A3",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B2",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B3",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B4",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B5",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            },
+            {
+              source: "模型B6",
+              target: "模型B1",
+              value: 20,
+              customLabel: "l3",
+              customInfo: {
+                desc:
+                  "These cookies are used to collect information about how you interact with our website and allow us to remember you."
+              }
+            }
+          ]
         };
       }
     },
@@ -538,11 +537,9 @@ export default {
         aggregatedData.edges.push(cedge);
       });
       this.clusteredData = clusteredData;
-      // console.log("clusteredData", clusteredData);
       const { clusters } = clusteredData;
       const cNode = [];
       clusters.map(item => cNode.push(...item.nodes));
-      console.log("cNode", cNode);
       const { edgeLabelVisible } = this;
       data.edges.forEach(edge => {
         edge.label = "";
@@ -553,10 +550,6 @@ export default {
         edge.style = { endArrow: true };
       });
       currentUnproccessedData = aggregatedData;
-      console.log(
-        "currentUnproccessedData.nodes",
-        currentUnproccessedData.nodes
-      );
       const { edges: processedEdges } = processNodesEdges(
         currentUnproccessedData.nodes,
         currentUnproccessedData.edges,
@@ -801,6 +794,7 @@ export default {
       );
       expandArray = newArray.expandArray;
       collapseArray = newArray.collapseArray;
+      console.log("aggregatedNodeMap", aggregatedNodeMap);
       let mixedGraphData = getMixedGraph(
         clusteredData,
         data,
@@ -809,6 +803,8 @@ export default {
         expandArray,
         collapseArray
       );
+      console.log("newArray", newArray);
+      console.log("mixedGraphData", mixedGraphData);
       return mixedGraphData;
     },
     // 事件绑定
@@ -1004,7 +1000,6 @@ export default {
       );
 
       edges = processRes.edges;
-      console.log(nodes, edges);
       graph.changeData({ nodes, edges });
 
       this.hideItems(graph);

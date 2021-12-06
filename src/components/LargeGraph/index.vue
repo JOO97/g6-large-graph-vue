@@ -264,17 +264,28 @@ export default {
         return {
           nodes: [
             {
-              id: "12345646",
+              id: "1",
               name: "模型A1",
+              nodeType: 1,
               customInfo: {
                 id: "xx",
+                createUser: "admin",
+                createTime: 1591461051000,
+                modifyUser: "admin",
+                modifyTime: 1591461051000,
+                name: "patent",
+                description: "专利",
+                projectId: "1267801840259440641",
+                createType: 0,
+                isDisplay: null,
+                count: 100,
+                color: "#1890FF",
                 desc:
                   "These cookies are used to collect information about how you interact with our website and allow us to remember you."
-              },
-              nodeType: 1
+              }
             },
             {
-              id: "1234564623213",
+              id: "2",
               name: "模型A2",
               customInfo: {
                 id: "xx",
@@ -283,20 +294,44 @@ export default {
               nodeType: 1
             },
             {
-              id: "1234564634324",
+              id: "11",
               name: "属性A1",
-              customInfo: {
-                id: "xx",
-                desc: "This."
-              },
               nodeType: 2,
-              pId: "12345646"
+              pId: "1",
+              customInfo: {
+                createUser: "admin",
+                createTime: 1591461051000,
+                modifyUser: "admin",
+                modifyTime: 1591461051000,
+                projectId: "1267801840259440641",
+                dataModelId: "1269305762472103938",
+                name: "id",
+                label: "主键",
+                type: 2
+              }
+            },
+            {
+              id: "13",
+              name: "属性B1",
+              nodeType: 2,
+              pId: "2",
+              customInfo: {
+                createUser: "admin",
+                createTime: 1591461051000,
+                modifyUser: "admin",
+                modifyTime: 1591461051000,
+                projectId: "1267801840259440641",
+                dataModelId: "1269305762472103938",
+                name: "id",
+                label: "主键",
+                type: 2
+              }
             }
           ],
           edges: [
             {
-              source: "12345646",
-              target: "1234564623213",
+              source: "1",
+              target: "2",
               customLabel: "hasNarrow"
             }
           ]
@@ -438,6 +473,7 @@ export default {
     return {
       graph: null,
       clusteredData: "",
+      originalData: { nodes: [], edges: [] },
       edgeLabelVisible: true,
       enableSearch: false,
       enableSelectPathEnd: false
@@ -461,14 +497,14 @@ export default {
   },
   methods: {
     init() {
-      const { id, data } = this;
+      const { id, data, edgeLabelVisible } = this;
       const container = document.getElementById(id);
       container.style.backgroundColor = "#2b2f33";
       const wrapper = this.$refs.wrapper.getBoundingClientRect();
       CANVAS_WIDTH = wrapper.width;
       CANVAS_HEIGHT = wrapper.height;
       nodeMap = {};
-      const clusteredData = louvain(data, false);
+      const clusteredData = { edges: [], nodes: [] };
       const mNodes = data.nodes
         .filter(item => item.nodeType === 1)
         .map((item, i) => {
@@ -478,7 +514,7 @@ export default {
               const cNodeObj = {
                 ...cNode,
                 level: 0,
-                label: item.name,
+                label: cNode.name,
                 colorSet: colorSets[i],
                 idx: i2,
                 type: "real-node"
@@ -486,6 +522,11 @@ export default {
               nodeMap[cNode.id] = cNodeObj;
               return cNodeObj;
             });
+          clusteredData.nodes[i] = {
+            id: item.id,
+            nodes: children,
+            count: children.length - 1
+          };
           const node = {
             ...item,
             level: -1,
@@ -493,82 +534,32 @@ export default {
             colorSet: colorSets[i],
             idx: i,
             type: "model-node",
-            showCNodes: false, //是否展示子节点
-            children
+            expandCNodes: false, //是否展示子节点
+            children,
+            count: children.length - 1
           };
           modelNodeMap[item.id] = node;
           return node;
         });
-      const mEdges = data.edges.map(edge => {
-        return {
-          ...edge,
-          label: "",
-          oriLabel: edge.customLabel
-            ? edge.customLabel
-            : `${edge.source}-${edge.target}`,
-          id: `edge-${uniqueId("edge")}`,
-          style: { endArrow: true },
-          level: -1
+      const mEdges = data.edges.map((edge, i) => {
+        clusteredData.edges[i] = {
+          source: edge.source,
+          target: edge.target,
+          weight: 1,
+          count: 5
         };
-      });
-      const aggregatedData = { nodes: [], edges: [] };
-      clusteredData.clusters.forEach((cluster, i) => {
-        cluster.nodes.forEach(node => {
-          node.level = 0;
-          node.label = node.id;
-          node.type = "";
-          node.colorSet = colorSets[i];
-          data.nodes.map(item => {
-            const { id, customInfo, nodeType } = item;
-            if (id === node.id && customInfo) {
-              node.customInfo = customInfo;
-            }
-            node.nodeType = nodeType;
-          });
-          nodeMap[node.id] = node;
-        });
-        const cnode = {
-          id: cluster.id,
-          type: "aggregated-node",
-          count: cluster.nodes.length,
-          //   category: cluster.category,
-          level: 1,
-          label: cluster.id,
-          colorSet: colorSets[i],
-          idx: i
-        };
-        aggregatedNodeMap[cluster.id] = cnode;
-        aggregatedData.nodes.push(cnode);
-      });
-      clusteredData.clusterEdges.forEach(clusterEdge => {
-        const cedge = {
-          ...clusterEdge,
-          size: Math.log(clusterEdge.count),
-          label: "",
-          id: `edge-${uniqueId("cedge")}`
-        };
-        if (cedge.source === cedge.target) {
-          cedge.type = "loop";
-          cedge.loopCfg = {
-            dist: 20
-          };
-        } else cedge.type = "line";
-        aggregatedData.edges.push(cedge);
-      });
-      this.clusteredData = clusteredData;
-      const { clusters } = clusteredData;
-      const cNode = [];
-      clusters.map(item => cNode.push(...item.nodes));
-      const { edgeLabelVisible } = this;
-      data.edges.forEach(edge => {
         edge.label = "";
         edge.oriLabel = edge.customLabel
           ? edge.customLabel
           : `${edge.source}-${edge.target}`;
         edge.id = `edge-${uniqueId("edge")}`;
         edge.style = { endArrow: true };
+        edge.level = -1;
+        return edge;
       });
-      currentUnproccessedData = aggregatedData;
+      this.originalData.nodes = mNodes;
+      this.originalData.edges = mEdges;
+      this.clusteredData = clusteredData;
       const { edges: processedEdges } = processNodesEdges(
         mNodes,
         mEdges,
@@ -623,7 +614,6 @@ export default {
         plugins: [this.setContextMenu(clusteredData), tooltip]
       });
       this.graph.get("canvas").set("localRefresh", false);
-
       const layoutConfig = getForceLayoutConfig(
         this.graph,
         largeGraphMode,
@@ -659,8 +649,7 @@ export default {
           const { item } = evt;
           if (evt.target && evt.target.isCanvas && evt.target.isCanvas()) {
             return `<ul>
-          <li id='collapseAll'>隐藏所有属性节点</li>
-          <li id='show'>显示所有隐藏元素</li>
+          <li id='createModel'>创建模型</li>
         </ul>`;
           } else if (!item) return;
           const itemType = item.getType();
@@ -675,7 +664,7 @@ export default {
               <li id='editMNode'>编辑模型</li>
               <li id='delMNode'>删除模型</li>
                ${
-                 model.showCNodes
+                 model.expandCNodes
                    ? '<li id="hideCNode">隐藏属性节点</li>'
                    : '<li id="showCNode">显示属性节点</li>'
                }
@@ -700,70 +689,15 @@ export default {
           let mixedGraphData;
           switch (liIdStrs[0]) {
             case "showCNode":
-              console.log(model);
-              break;
-            case "hide":
-              this.graph.hideItem(item);
-              hiddenItemIds.push(model.id);
-              break;
-            case "expand":
-              mixedGraphData = this.getAfterExpandNodeData({
+            case "hideCNode":
+              mixedGraphData = this.getAfterExpandNodeData2({
                 model,
                 clusteredData,
                 data
               });
               break;
-            case "collapse":
-              const aggregatedNode = aggregatedNodeMap[model.clusterId];
-              manipulatePosition = {
-                x: aggregatedNode.x,
-                y: aggregatedNode.y
-              };
-              collapseArray.push(aggregatedNode);
-              for (let i = 0; i < expandArray.length; i++) {
-                if (expandArray[i].id === model.clusterId) {
-                  expandArray.splice(i, 1);
-                  break;
-                }
-              }
-              mixedGraphData = getMixedGraph(
-                clusteredData,
-                data,
-                nodeMap,
-                aggregatedNodeMap,
-                expandArray,
-                collapseArray
-              );
-              break;
-            case "collapseAll":
-              expandArray = [];
-              collapseArray = [];
-              mixedGraphData = getMixedGraph(
-                clusteredData,
-                data,
-                nodeMap,
-                aggregatedNodeMap,
-                expandArray,
-                collapseArray
-              );
-              break;
-            case "neighbor":
-              const expandNeighborSteps = parseInt(liIdStrs[1]);
-              mixedGraphData = getNeighborMixedGraph(
-                model,
-                expandNeighborSteps,
-                data,
-                clusteredData,
-                currentUnproccessedData,
-                nodeMap,
-                aggregatedNodeMap,
-                1
-              );
-              break;
-            case "show":
-              this.showItems(this.graph);
-              break;
             default:
+              this.$emit("on-click-menu", { type: liIdStrs[0], data: model });
               break;
           }
           if (mixedGraphData) {
@@ -789,6 +723,58 @@ export default {
         // 在哪些类型的元素上响应
         itemTypes: ["node", "edge", "canvas"]
       });
+    },
+
+    //展开节点后的数据
+    getAfterExpandNodeData2({ model, clusteredData, data }) {
+      const { originalData } = this;
+      const { level, id: currentId } = model;
+      if (level !== -1) return;
+      const edges = [...originalData.edges],
+        nodes = [];
+      Object.keys(modelNodeMap).map(id => {
+        if (id === currentId) {
+          modelNodeMap[id].expandCNodes = !modelNodeMap[id].expandCNodes;
+        }
+        nodes.push(modelNodeMap[id]);
+        let children = [];
+        if (modelNodeMap[id].expandCNodes) {
+          children = modelNodeMap[id].children;
+        }
+        nodes.push(...children);
+        children.map(item => {
+          edges.push({
+            source: id,
+            target: item.id,
+            label: "",
+            level: 0,
+            style: { endArrow: false }
+          });
+        });
+      });
+      return { nodes, edges };
+      // const newArray = (
+      //   this.graph.getNodes().length,
+      //   model,
+      //   collapseArray,
+      //   expandArray,
+      //   this.graph
+      // );
+      // console.log("newArray", newArray);
+      // console.log("modelNodeMap", modelNodeMap, clusteredData);
+      // expandArray = newArray.expandArray;
+      // collapseArray = newArray.collapseArray;
+      // let mixedGraphData = getMixedGraph(
+      //   clusteredData,
+      //   data,
+      //   nodeMap,
+      //   modelNodeMap,
+      //   expandArray,
+      //   collapseArray
+      // );
+      // console.log("mixedGraphData", mixedGraphData);
+
+      return mixedGraphData;
     },
     //展开节点后的数据
     getAfterExpandNodeData({ model, clusteredData, data }) {
@@ -888,7 +874,6 @@ export default {
 
         // highlight the clicked node, it is down by click-select
         graph.setItemState(item, "focus", true);
-
         if (!shiftKeydown) {
           // 将相关边也高亮
           const relatedEdges = item.getEdges();
