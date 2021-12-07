@@ -32,7 +32,6 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
   theme,
   disableColor
 );
-
 //graph config
 const global = {
   node: {
@@ -364,11 +363,11 @@ G6.registerNode(
   "model-node",
   {
     draw(cfg, group) {
-      let r = 100;
+      let r = 60;
       if (isNumber(cfg.size)) {
-        r = cfg.size;
+        r = cfg.size / 2;
       } else if (isArray(cfg.size)) {
-        r = cfg.size[0];
+        r = cfg.size[0] / 2;
       }
       const style = cfg.style || {};
       const colorSet = cfg.colorSet || colorSets[0];
@@ -443,7 +442,7 @@ G6.registerNode(
             fontSize,
             fill: "#fff",
             opacity: 0.85,
-            fontWeight: 400,
+            fontWeight: 600,
             stroke: global.edge.labelCfg.style.stroke
           },
           name: "text-shape",
@@ -505,7 +504,7 @@ G6.registerNode(
     },
     update: undefined
   },
-  "single-node"
+  "aggregated-node"
 );
 
 // Custom the quadratic edge for multiple edges between one node pair
@@ -608,7 +607,7 @@ G6.registerEdge(
       }
     }
   },
-  "quadratic"
+  "line"
 );
 
 // Custom the line edge for single edge between one node pair
@@ -634,12 +633,12 @@ G6.registerEdge(
           keyShape.attr({
             strokeOpacity: animateOpacity,
             opacity: animateOpacity,
-            stroke: "#fff"
-            // endArrow: {
-            //   ...arrow,
-            //   stroke: "#fff",
-            //   fill: "#fff"
-            // }
+            stroke: "#fff",
+            endArrow: {
+              ...arrow,
+              stroke: "#fff",
+              fill: "#fff"
+            }
           });
           if (model.isReal) {
             const { path, stroke, lineWidth } = keyShape.attr();
@@ -699,18 +698,18 @@ G6.registerEdge(
           keyShape.attr({
             stroke,
             strokeOpacity: opacity,
-            opacity: opacity
-            // endArrow: {
-            //   ...arrow,
-            //   stroke,
-            //   fill: stroke
-            // }
+            opacity,
+            endArrow: {
+              ...arrow,
+              stroke,
+              fill: stroke
+            }
           });
         }
       }
     }
   },
-  "single-edge"
+  "custom-quadratic"
 );
 
 export default G6;

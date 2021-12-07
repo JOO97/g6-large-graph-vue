@@ -5,7 +5,7 @@ const NODESIZEMAPPING = "degree";
 const SMALLGRAPHLABELMAXLENGTH = 15;
 export let labelMaxLength = SMALLGRAPHLABELMAXLENGTH;
 //默认节点大小
-const DEFAULTNODESIZE = 35;
+const DEFAULTNODESIZE = 60;
 //默认子节点大小
 const CHILDNODESIZE = 20;
 
@@ -116,11 +116,11 @@ export const getForceLayoutConfig = (
 
       const sourceNode = nodeMap[d.source] || aggregatedNodeMap[d.source];
       const targetNode = nodeMap[d.target] || aggregatedNodeMap[d.target];
-      // // 两端都是聚合点
-      // if (sourceNode.level && targetNode.level) dist = linkDistance * 3;
-      // // 一端是聚合点，一端是真实节点
-      // else if (sourceNode.level || targetNode.level) dist = linkDistance * 1.5;
-      if (!sourceNode.level && !targetNode.level) dist = linkDistance * 0.3;
+      // 两端都是模型节点
+      if (sourceNode.level === -1 && targetNode.level === -1)
+        dist = linkDistance * 1.5;
+      // 一端是模型节点，一端是属性节点
+      else if (sourceNode.level || targetNode.level) dist = linkDistance * 0.5;
       return dist;
     },
     edgeStrength: d => {
@@ -133,8 +133,8 @@ export const getForceLayoutConfig = (
       return edgeStrength;
     },
     nodeStrength: d => {
-      // 给离散点引力，让它们聚集
-      if (d.degree === 0) return -10;
+      // 离散点引力
+      if (d.degree === 0) return nodeStrength * 2;
       // 聚合点的斥力大
       if (d.level) return nodeStrength * 2;
       return nodeStrength;
@@ -187,6 +187,7 @@ export const processNodesEdges = (
 ) => {
   if (!nodes || nodes.length === 0) return {};
   const currentNodeMap = {};
+  let extraLabelCfg = {};
   let maxNodeCount = -Infinity;
   const paddingRatio = 0.3;
   const paddingLeft = paddingRatio * width;
@@ -310,9 +311,9 @@ export const processNodesEdges = (
     edge.isReal = isRealEdge;
     if (edge.source === edge.target) {
       edge.type = "loop";
-      if (!edge.isReal) {
-        arrowPath = undefined;
-      }
+      // extraLabelCfg = { refY: -5, refX: 30 };
+      arrowPath = G6.Arrow.triangle(4, 5, 5);
+      d = 5;
     }
     const stroke = isRealEdge
       ? global.edge.style.realEdgeStroke
@@ -330,7 +331,8 @@ export const processNodesEdges = (
       fillOpacity: 1,
       lineDash,
       endArrow:
-        isRealEdge && arrowPath
+        // isRealEdge &&
+        arrowPath
           ? {
               path: arrowPath,
               d,
@@ -348,7 +350,8 @@ export const processNodesEdges = (
         fontSize: 14,
         lineAppendWidth: 10,
         opacity: 1
-      }
+      },
+      ...extraLabelCfg
     };
     if (!edge.oriLabel) edge.oriLabel = edge.label;
     // if (largeGraphMode || !edgeLabelVisible) edge.label = ''
@@ -403,8 +406,14 @@ export const processNodesEdges = (
         descreteNodeCenter.y + 30 * Math.sin(Math.random() * Math.PI * 2);
     }
   });
-
-  G6.Util.processParallelEdges(edges, 12.5, "custom-quadratic", "custom-line");
+  //处理平行边
+  G6.Util.processParallelEdges(
+    edges,
+    12.5,
+    "custom-line",
+    "custom-line",
+    "loop"
+  );
   return {
     maxDegree,
     edges

@@ -148,10 +148,8 @@ const tooltip = new G6.Tooltip({
   offsetX: 10,
   offsetY: 10,
   shouldBegin: e => {
-    const model = e.item.getModel();
     const { type, isReal } = e.item.getModel();
-    if ((type === "custom-quadratic" || type === "custom-line") && !isReal)
-      return false;
+    if (type === "custom-line" && !isReal) return false;
     return true;
   },
   // 自定义 tooltip 内容
@@ -199,7 +197,6 @@ const tooltip = new G6.Tooltip({
         }
         break;
       case "custom-line":
-      case "custom-quadratic":
       case "loop":
         itemBgColor = "#6DD400";
         if (model.isReal) {
@@ -333,6 +330,16 @@ export default {
               source: "1",
               target: "2",
               customLabel: "hasNarrow"
+            },
+            {
+              source: "1",
+              target: "1",
+              customLabel: "loop"
+            },
+            {
+              source: "1",
+              target: "1",
+              customLabel: "loop2"
             }
           ]
           // [
@@ -480,6 +487,13 @@ export default {
     };
   },
   watch: {
+    data: {
+      handler(nVal) {
+        if (!nVal) return;
+        this.updateNodes(nVal);
+      },
+      deep: true
+    },
     edgeLabelVisible(nVal) {
       const { graph } = this;
       if (!graph || graph.get("destroyed")) return;
@@ -496,14 +510,25 @@ export default {
     this.init();
   },
   methods: {
-    init() {
-      const { id, data, edgeLabelVisible } = this;
-      const container = document.getElementById(id);
-      container.style.backgroundColor = "#2b2f33";
-      const wrapper = this.$refs.wrapper.getBoundingClientRect();
-      CANVAS_WIDTH = wrapper.width;
-      CANVAS_HEIGHT = wrapper.height;
+    updateNodes(data) {
+      const { edgeLabelVisible } = this;
+      cachePositions = cacheNodePositions(this.graph.getNodes());
+      const { mEdges, mNodes } = this.getGraphData();
+      this.handleRefreshGraph(
+        this.graph,
+        { nodes: mNodes, edges: mEdges },
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT,
+        largeGraphMode,
+        edgeLabelVisible,
+        false
+      );
+    },
+    getGraphData() {
+      const { data } = this;
+      console.log(data);
       nodeMap = {};
+      modelNodeMap = {};
       const clusteredData = { edges: [], nodes: [] };
       const mNodes = data.nodes
         .filter(item => item.nodeType === 1)
@@ -535,6 +560,7 @@ export default {
             idx: i,
             type: "model-node",
             expandCNodes: false, //是否展示子节点
+            showLoopEdge: true, //是否显示自环边
             children,
             count: children.length - 1
           };
@@ -548,6 +574,17 @@ export default {
           weight: 1,
           count: 5
         };
+        const edgeObj = {
+          ...edge,
+          label: "",
+          oriLabel: edge.customLabel
+            ? edge.customLabel
+            : `${edge.source}-${edge.target}`,
+          id: `edge-${uniqueId("edge")}`,
+          style: { endArrow: true },
+          level: -1
+        };
+        return edgeObj;
         edge.label = "";
         edge.oriLabel = edge.customLabel
           ? edge.customLabel
@@ -560,6 +597,17 @@ export default {
       this.originalData.nodes = mNodes;
       this.originalData.edges = mEdges;
       this.clusteredData = clusteredData;
+      return { mEdges, mNodes, clusteredData };
+    },
+    init() {
+      const { id, edgeLabelVisible } = this;
+      const container = document.getElementById(id);
+      container.style.backgroundColor = "#2b2f33";
+      const wrapper = this.$refs.wrapper.getBoundingClientRect();
+      CANVAS_WIDTH = wrapper.width;
+      CANVAS_HEIGHT = wrapper.height;
+      const { mEdges, mNodes } = this.getGraphData();
+      console.log("mEdges", mEdges);
       const { edges: processedEdges } = processNodesEdges(
         mNodes,
         mEdges,
@@ -570,6 +618,7 @@ export default {
         true,
         cachePositions
       );
+      console.log("1 edges", processedEdges);
       //create graph
       this.graph = new G6.Graph({
         container: id,
@@ -611,7 +660,7 @@ export default {
           type: "model-node",
           size: DEFAULTNODESIZE
         },
-        plugins: [this.setContextMenu(clusteredData), tooltip]
+        plugins: [this.setContextMenu(), tooltip]
       });
       this.graph.get("canvas").set("localRefresh", false);
       const layoutConfig = getForceLayoutConfig(
@@ -636,8 +685,8 @@ export default {
       this.graph.render();
     },
     //context menu
-    setContextMenu(clusteredData) {
-      const { data } = this;
+    setContextMenu() {
+      const { data, clusteredData } = this;
       return new G6.Menu({
         shouldBegin(evt) {
           if (evt.target && evt.target.isCanvas && evt.target.isCanvas())
@@ -661,8 +710,8 @@ export default {
               <li id='createCNode'>添加属性</li>
               <li id='createEdge'>添加关系</li>
 
-              <li id='editMNode'>编辑模型</li>
-              <li id='delMNode'>删除模型</li>
+              <li id='editModel'>编辑模型</li>
+              <li id='delModel'>删除模型</li>
                ${
                  model.expandCNodes
                    ? '<li id="hideCNode">隐藏属性节点</li>'
@@ -676,10 +725,12 @@ export default {
             </ul>`;
               }
             } else if (itemType === "edge") {
-              return `<ul>
+              if (model.level === -1) {
+                return `<ul>
             <li id='editEdge'>编辑关系</li>
             <li id='delEdge'>删除关系</li>
           </ul>`;
+              }
             }
           }
         },
@@ -697,7 +748,10 @@ export default {
               });
               break;
             default:
-              this.$emit("on-click-menu", { type: liIdStrs[0], data: model });
+              this.$emit("on-click-menu", {
+                menuType: liIdStrs[0],
+                data: model
+              });
               break;
           }
           if (mixedGraphData) {
@@ -724,7 +778,6 @@ export default {
         itemTypes: ["node", "edge", "canvas"]
       });
     },
-
     //展开节点后的数据
     getAfterExpandNodeData2({ model, clusteredData, data }) {
       const { originalData } = this;
@@ -753,28 +806,6 @@ export default {
         });
       });
       return { nodes, edges };
-      // const newArray = (
-      //   this.graph.getNodes().length,
-      //   model,
-      //   collapseArray,
-      //   expandArray,
-      //   this.graph
-      // );
-      // console.log("newArray", newArray);
-      // console.log("modelNodeMap", modelNodeMap, clusteredData);
-      // expandArray = newArray.expandArray;
-      // collapseArray = newArray.collapseArray;
-      // let mixedGraphData = getMixedGraph(
-      //   clusteredData,
-      //   data,
-      //   nodeMap,
-      //   modelNodeMap,
-      //   expandArray,
-      //   collapseArray
-      // );
-      // console.log("mixedGraphData", mixedGraphData);
-
-      return mixedGraphData;
     },
     //展开节点后的数据
     getAfterExpandNodeData({ model, clusteredData, data }) {
@@ -913,7 +944,6 @@ export default {
       //   })
       // })
     },
-
     // 清除focus状态及相应样式
     clearFocusItemState(graph) {
       if (!graph) return;
@@ -964,6 +994,7 @@ export default {
       isNewGraph = false
     ) {
       if (!graphData || !graph) return;
+      console.log("graphData", graphData);
       this.clearFocusItemState(graph);
       // reset the filtering
       graph.getNodes().forEach(node => {
@@ -987,8 +1018,8 @@ export default {
         isNewGraph,
         cachePositions
       );
-
       edges = processRes.edges;
+      console.log("edges", edges);
       graph.changeData({ nodes, edges });
 
       this.hideItems(graph);
