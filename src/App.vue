@@ -91,25 +91,33 @@ export default {
   },
   methods: {
     //获取g6需要的节点数据
-    getGraphNodeData(list, nodeType = 1) {
+    getGraphNodeData(list, nodeType = 1, pKey = "") {
       return list.map(item => {
-        const { id, name } = item;
+        const { id, name, expand } = item;
         return {
           id,
           name,
           nodeType,
+          expand: nodeType === 1 ? expand : undefined,
+          pId: nodeType !== 1 ? item[pKey] : undefined,
           customInfo: item
         };
       });
     },
     getModelList() {
       console.log(this.modeList);
-      const data = this.getGraphNodeData(this.modeList, 1);
+      const data = this.getGraphNodeData(
+        this.modeList.map(item => {
+          return { ...item, expand: false };
+        }),
+        1
+      );
       this.graphData.nodes = data;
       this.loading = false;
     },
     handleGraphMenuClick({ menuType, data }) {
       console.log("data", data);
+      const { id } = data;
       switch (menuType) {
         case "createModel":
           this.graphData.nodes.push(
@@ -152,6 +160,47 @@ export default {
             color: "#1890FF"
           });
           this.getModelList();
+          break;
+        case "showCNode":
+          const cList = this.getGraphNodeData(
+            [
+              {
+                id: "1269305763956887554",
+                createUser: "admin",
+                createTime: 1591461051000,
+                modifyUser: "admin",
+                modifyTime: 1591461051000,
+                projectId: "1267801840259440641",
+                dataModelId: "1269305762472103938",
+                name: "id",
+                label: "主键",
+                type: 2,
+                isDisplay: false,
+                isForeign: false,
+                foreignModelId: null,
+                foreignModelPropertyId: null,
+                isAttachment: false,
+                isSearch: false,
+                jsonDictionaryEnumeration: null,
+                primaryDisplayProperty: false,
+                displayListIndex: null,
+                displayDetailIndex: null,
+                defaultFilterProperty: false,
+                foreignKey: null,
+                dictionaryEnumerations: null
+              }
+            ],
+            2,
+            "dataModelId"
+          );
+          console.log(cList);
+          let i;
+          this.graphData.nodes.map((item, index) => {
+            if (item.id === id) i = index;
+          });
+          console.log(i);
+          Vue.set(this.graphData.nodes[i], "expand", true);
+          this.graphData.nodes.push(...cList);
           break;
         default:
           break;

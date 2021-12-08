@@ -123,25 +123,6 @@ let CANVAS_WIDTH = 800,
 const darkBackColor = "rgb(43,47,51)";
 const disableColor = "#777";
 const theme = "dark";
-const subjectColors = [
-  "#5F95FF", // blue
-  "#61DDAA",
-  "#65789B",
-  "#F6BD16",
-  "#7262FD",
-  "#78D3F8",
-  "#9661BC",
-  "#F6903D",
-  "#008685",
-  "#F08BB4"
-];
-
-const colorSets = G6.Util.getColorSetsBySubjectColors(
-  subjectColors,
-  darkBackColor,
-  theme,
-  disableColor
-);
 
 //tooltip
 const tooltip = new G6.Tooltip({
@@ -481,16 +462,18 @@ export default {
       graph: null,
       clusteredData: "",
       originalData: { nodes: [], edges: [] },
-      edgeLabelVisible: true,
-      enableSearch: false,
-      enableSelectPathEnd: false
+      edgeLabelVisible: true, //边标签
+      enableSearch: false, //检索模式
+      enableSelectPathEnd: false, //检索路径模式
+      colorSets: [] //节点颜色
     };
   },
   watch: {
     data: {
       handler(nVal) {
         if (!nVal) return;
-        this.updateNodes(nVal);
+        console.log("update");
+        this.updateNodesAndEdges();
       },
       deep: true
     },
@@ -510,95 +493,7 @@ export default {
     this.init();
   },
   methods: {
-    updateNodes(data) {
-      const { edgeLabelVisible } = this;
-      cachePositions = cacheNodePositions(this.graph.getNodes());
-      const { mEdges, mNodes } = this.getGraphData();
-      this.handleRefreshGraph(
-        this.graph,
-        { nodes: mNodes, edges: mEdges },
-        CANVAS_WIDTH,
-        CANVAS_HEIGHT,
-        largeGraphMode,
-        edgeLabelVisible,
-        false
-      );
-    },
-    getGraphData() {
-      const { data } = this;
-      console.log(data);
-      nodeMap = {};
-      modelNodeMap = {};
-      const clusteredData = { edges: [], nodes: [] };
-      const mNodes = data.nodes
-        .filter(item => item.nodeType === 1)
-        .map((item, i) => {
-          const children = data.nodes
-            .filter(cNode => cNode.nodeType === 2 && cNode.pId === item.id)
-            .map((cNode, i2) => {
-              const cNodeObj = {
-                ...cNode,
-                level: 0,
-                label: cNode.name,
-                colorSet: colorSets[i],
-                idx: i2,
-                type: "real-node"
-              };
-              nodeMap[cNode.id] = cNodeObj;
-              return cNodeObj;
-            });
-          clusteredData.nodes[i] = {
-            id: item.id,
-            nodes: children,
-            count: children.length - 1
-          };
-          const node = {
-            ...item,
-            level: -1,
-            label: item.name,
-            colorSet: colorSets[i],
-            idx: i,
-            type: "model-node",
-            expandCNodes: false, //是否展示子节点
-            showLoopEdge: true, //是否显示自环边
-            children,
-            count: children.length - 1
-          };
-          modelNodeMap[item.id] = node;
-          return node;
-        });
-      const mEdges = data.edges.map((edge, i) => {
-        clusteredData.edges[i] = {
-          source: edge.source,
-          target: edge.target,
-          weight: 1,
-          count: 5
-        };
-        const edgeObj = {
-          ...edge,
-          label: "",
-          oriLabel: edge.customLabel
-            ? edge.customLabel
-            : `${edge.source}-${edge.target}`,
-          id: `edge-${uniqueId("edge")}`,
-          style: { endArrow: true },
-          level: -1
-        };
-        return edgeObj;
-        edge.label = "";
-        edge.oriLabel = edge.customLabel
-          ? edge.customLabel
-          : `${edge.source}-${edge.target}`;
-        edge.id = `edge-${uniqueId("edge")}`;
-        edge.style = { endArrow: true };
-        edge.level = -1;
-        return edge;
-      });
-      this.originalData.nodes = mNodes;
-      this.originalData.edges = mEdges;
-      this.clusteredData = clusteredData;
-      return { mEdges, mNodes, clusteredData };
-    },
+    //初始化
     init() {
       const { id, edgeLabelVisible } = this;
       const container = document.getElementById(id);
@@ -607,7 +502,6 @@ export default {
       CANVAS_WIDTH = wrapper.width;
       CANVAS_HEIGHT = wrapper.height;
       const { mEdges, mNodes } = this.getGraphData();
-      console.log("mEdges", mEdges);
       const { edges: processedEdges } = processNodesEdges(
         mNodes,
         mEdges,
@@ -684,6 +578,110 @@ export default {
       });
       this.graph.render();
     },
+    //获取节点颜色配置
+    getColorSets(color) {
+      return G6.Util.getColorSetsBySubjectColors(
+        color,
+        darkBackColor,
+        theme,
+        disableColor
+      );
+    },
+    //更新节点、边
+    updateNodesAndEdges() {
+      const { edgeLabelVisible } = this;
+      cachePositions = cacheNodePositions(this.graph.getNodes());
+      const { mEdges, mNodes } = this.getGraphData();
+      this.handleRefreshGraph(
+        this.graph,
+        { nodes: mNodes, edges: mEdges },
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT,
+        largeGraphMode,
+        edgeLabelVisible,
+        false
+      );
+    },
+    //处理节点、边数据
+    getGraphData() {
+      const { data } = this;
+      nodeMap = {};
+      modelNodeMap = {};
+      const clusteredData = { edges: [], nodes: [] };
+      let mNodes = [];
+      data.nodes
+        .filter(item => item.nodeType === 1)
+        .map((item, i) => {
+          const {
+            customInfo: { color }
+          } = item;
+          const [colorSet] = this.getColorSets([color]);
+          this.colorSets[i] = colorSet;
+          const children = data.nodes
+            .filter(cNode => cNode.nodeType === 2 && cNode.pId === item.id)
+            .map((cNode, i2) => {
+              const cNodeObj = {
+                ...cNode,
+                level: 0,
+                label: cNode.name,
+                colorSet: colorSet,
+                idx: i2,
+                type: "real-node"
+              };
+              nodeMap[cNode.id] = cNodeObj;
+              return cNodeObj;
+            });
+          clusteredData.nodes[i] = {
+            id: item.id,
+            nodes: children,
+            count: children.length - 1
+          };
+          const nodeObj = {
+            ...item,
+            level: -1,
+            label: item.name,
+            colorSet,
+            idx: i,
+            type: "model-node",
+            expandCNodes: item.expand, //是否展示子节点
+            showLoopEdge: true, //是否显示自环边
+            children,
+            count: children.length - 1
+          };
+          modelNodeMap[item.id] = nodeObj;
+          if (item.expand) {
+            const { nodes, edges } = this.getAfterExpandNodeData2({
+              model: { level: -1, id: item.id }
+            });
+            console.log(nodes, edges);
+          }
+          const node = [nodeObj];
+          mNodes.push(...node);
+        });
+      const mEdges = data.edges.map((edge, i) => {
+        clusteredData.edges[i] = {
+          source: edge.source,
+          target: edge.target,
+          weight: 1,
+          count: 5
+        };
+        const edgeObj = {
+          ...edge,
+          label: "",
+          oriLabel: edge.customLabel
+            ? edge.customLabel
+            : `${edge.source}-${edge.target}`,
+          id: `edge-${uniqueId("edge")}`,
+          style: { endArrow: true },
+          level: -1
+        };
+        return edgeObj;
+      });
+      this.originalData.nodes = mNodes;
+      this.originalData.edges = mEdges;
+      this.clusteredData = clusteredData;
+      return { mEdges, mNodes, clusteredData };
+    },
     //context menu
     setContextMenu() {
       const { data, clusteredData } = this;
@@ -709,7 +707,6 @@ export default {
                 return `<ul>
               <li id='createCNode'>添加属性</li>
               <li id='createEdge'>添加关系</li>
-
               <li id='editModel'>编辑模型</li>
               <li id='delModel'>删除模型</li>
                ${
@@ -736,10 +733,24 @@ export default {
         },
         handleMenuClick: (target, item) => {
           const model = item && item.getModel();
+          console.log("model", model);
           const liIdStrs = target.id.split("-");
           let mixedGraphData;
           switch (liIdStrs[0]) {
             case "showCNode":
+              if (model.children && model.children.length) {
+                mixedGraphData = this.getAfterExpandNodeData2({
+                  model,
+                  clusteredData,
+                  data
+                });
+              } else {
+                this.$emit("on-click-menu", {
+                  menuType: liIdStrs[0],
+                  data: model
+                });
+              }
+              break;
             case "hideCNode":
               mixedGraphData = this.getAfterExpandNodeData2({
                 model,
@@ -983,7 +994,7 @@ export default {
     stopLayout() {
       layout.instance.stop();
     },
-    //refresh graph
+    //refresh
     handleRefreshGraph(
       graph,
       graphData,
@@ -1050,7 +1061,6 @@ export default {
 
       return { nodes, edges };
     },
-
     //canvas-menu func
     setCanvasMenuProps(key) {
       this[key] = !this[key];
