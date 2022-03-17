@@ -5,11 +5,7 @@
       <button>edit model</button>
       <button>del model</button>
     </div>
-    <LargeGraph
-      v-if="!loading"
-      @on-click-menu="handleGraphMenuClick"
-      :data="graphData"
-    />
+    <LargeGraph />
   </div>
 </template>
 
@@ -108,7 +104,7 @@ export default {
       console.log(this.modeList);
       const data = this.getGraphNodeData(
         this.modeList.map(item => {
-          return { ...item, expand: false };
+          return { ...item, expand: true };
         }),
         1
       );

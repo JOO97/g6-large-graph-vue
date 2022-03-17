@@ -36,6 +36,8 @@
 </template>
 
 <script>
+import graph from "./graph-orgianl.js";
+
 //测试数据
 import graphData from "./data.json";
 
@@ -245,6 +247,7 @@ export default {
               id: "1",
               name: "模型A1",
               nodeType: 1,
+              color: "#1890FF",
               customInfo: {
                 id: "xx",
                 createUser: "admin",
@@ -267,7 +270,18 @@ export default {
               name: "模型A2",
               customInfo: {
                 id: "xx",
-                desc: "This website stores."
+                desc: "This website stores.",
+                color: "#EC1716"
+              },
+              nodeType: 1
+            },
+            {
+              id: "3",
+              name: "模型A3",
+              customInfo: {
+                id: "xx",
+                desc: "This website stores.",
+                color: "#40BC83"
               },
               nodeType: 1
             },
@@ -490,7 +504,7 @@ export default {
     enableSearch(nVal) {}
   },
   mounted() {
-    this.init();
+    // this.init();
   },
   methods: {
     //初始化
